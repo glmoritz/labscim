@@ -24,8 +24,8 @@
  * part of:    Modifications to the MF-2 framework by CSEM
  **************************************************************************/
 
-#ifndef __LABSCIM_ContikiNGIeee802154GlueMac_H
-#define __LABSCIM_ContikiNGIeee802154GlueMac_H
+#ifndef __LABSCIM_LoRaMacNodeGlueMac_H
+#define __LABSCIM_LoRaMacNodeGlueMac_H
 
 #include "inet/queueing/contract/IPacketQueue.h"
 #include "inet/linklayer/base/MacProtocolBase.h"
@@ -40,7 +40,7 @@ using namespace inet;
 using namespace labscim;
 
 
-namespace tsch {
+namespace labscim {
 
 /**
  * @brief Generic CSMA Mac-Layer.
@@ -53,10 +53,10 @@ namespace tsch {
  *
  * \image html csmaFSM.png "CSMA Mac-Layer - finite state machine"
  */
-class INET_API ContikiNGIeee802154GlueMac : public MacProtocolBase, public IMacProtocol, public LabscimConnector
+class INET_API LoRaMacNodeGlueMac : public MacProtocolBase, public IMacProtocol, public LabscimConnector
 {
 public:
-    ContikiNGIeee802154GlueMac()
+    LoRaMacNodeGlueMac()
 : MacProtocolBase()
 , LabscimConnector()
 , radio(nullptr)
@@ -79,7 +79,7 @@ public:
         mRadioConfigured = false;
 }
 
-    virtual ~ContikiNGIeee802154GlueMac();
+    virtual ~LoRaMacNodeGlueMac();
 
     /** @brief Initialization of the module and some variables*/
     virtual void initialize(int) override;
@@ -170,10 +170,10 @@ private:
 
     /** @brief Copy constructor is not allowed.
      */
-    ContikiNGIeee802154GlueMac(const ContikiNGIeee802154GlueMac&);
+    LoRaMacNodeGlueMac(const LoRaMacNodeGlueMac&);
     /** @brief Assignment operator is not allowed.
      */
-    ContikiNGIeee802154GlueMac& operator=(const ContikiNGIeee802154GlueMac&);
+    LoRaMacNodeGlueMac& operator=(const LoRaMacNodeGlueMac&);
 };
 
 } // namespace inet

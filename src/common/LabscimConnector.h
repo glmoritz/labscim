@@ -24,7 +24,7 @@
 #include <list>
 
 
-namespace tsch {
+namespace labscim {
 
 using namespace std;
 

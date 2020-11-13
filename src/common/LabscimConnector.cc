@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 
-using namespace tsch;
+using namespace labscim;
 using namespace std;
 
 std::string LabscimConnector::ExecuteCommand(const char* cmd)

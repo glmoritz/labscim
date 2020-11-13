@@ -27,7 +27,7 @@
 #include <cassert>
 #include <math.h>
 
-#include "ContikiNGIeee802154GlueMac.h"
+#include "LoRaMacNodeGlueMac.h"
 #include "inet/common/FindModule.h"
 #include "inet/common/INETMath.h"
 #include "inet/common/INETUtils.h"
@@ -57,14 +57,11 @@ using namespace inet;
 
 
 
-namespace tsch {
+namespace labscim {
 
-Define_Module(ContikiNGIeee802154GlueMac);
+Define_Module(LoRaMacNodeGlueMac);
 
-
-
-
-void ContikiNGIeee802154GlueMac::initialize(int stage)
+void LoRaMacNodeGlueMac::initialize(int stage)
 {
     MacProtocolBase::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
@@ -143,12 +140,12 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
     }
 }
 
-void ContikiNGIeee802154GlueMac::finish()
+void LoRaMacNodeGlueMac::finish()
 {
 
 }
 
-ContikiNGIeee802154GlueMac::~ContikiNGIeee802154GlueMac()
+LoRaMacNodeGlueMac::~LoRaMacNodeGlueMac()
 {
     for (cMessage* ptr: mScheduledTimerMsgs)
     {
@@ -161,7 +158,7 @@ ContikiNGIeee802154GlueMac::~ContikiNGIeee802154GlueMac()
     }
 }
 
-void ContikiNGIeee802154GlueMac::configureInterfaceEntry()
+void LoRaMacNodeGlueMac::configureInterfaceEntry()
 {
     MacAddress address = parseMacAddressParameter(par("address"));
 
@@ -182,14 +179,14 @@ void ContikiNGIeee802154GlueMac::configureInterfaceEntry()
  * Encapsulates the message to be transmitted and pass it on
  * to the FSM main method for further processing.
  */
-void ContikiNGIeee802154GlueMac::handleUpperPacket(Packet *packet)
+void LoRaMacNodeGlueMac::handleUpperPacket(Packet *packet)
 {
     //we just ignore any upper packet
     delete packet;
 }
 
 
-void ContikiNGIeee802154GlueMac::attachSignal(Packet *mac, simtime_t_cref startTime)
+void LoRaMacNodeGlueMac::attachSignal(Packet *mac, simtime_t_cref startTime)
 {
     simtime_t duration = mac->getBitLength() / mCurrentBitrate.get();
     mac->setDuration(duration);
@@ -198,7 +195,7 @@ void ContikiNGIeee802154GlueMac::attachSignal(Packet *mac, simtime_t_cref startT
 #define DOT_15_4G_CHAN0_FREQUENCY 902200
 #define DOT_15_4G_CHANNEL_SPACING    200
 
-void ContikiNGIeee802154GlueMac::configureRadio(Hz CenterFrequency, Hz Bandwidth, W Power, bps Bitrate, int mode /*= -1*/)
+void LoRaMacNodeGlueMac::configureRadio(Hz CenterFrequency, Hz Bandwidth, W Power, bps Bitrate, int mode /*= -1*/)
 {
     auto configureCommand = new ConfigureRadioCommand();
     auto request = new Message("changeChannel", RADIO_C_CONFIGURE);
@@ -277,7 +274,7 @@ void ContikiNGIeee802154GlueMac::configureRadio(Hz CenterFrequency, Hz Bandwidth
 }
 
 
-void ContikiNGIeee802154GlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
+void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
 {
 
     switch(cmd->radio_command)
@@ -405,7 +402,7 @@ void ContikiNGIeee802154GlueMac::PerformRadioCommand(struct labscim_radio_comman
     }
 }
 
-cMessage* ContikiNGIeee802154GlueMac::GetScheduledTimeEvent(uint32_t sequence_number)
+cMessage* LoRaMacNodeGlueMac::GetScheduledTimeEvent(uint32_t sequence_number)
 {
     std::list<cMessage*>::iterator it;
     for (it = mScheduledTimerMsgs.begin(); it != mScheduledTimerMsgs.end(); ++it)
@@ -422,7 +419,7 @@ cMessage* ContikiNGIeee802154GlueMac::GetScheduledTimeEvent(uint32_t sequence_nu
     return nullptr;
 }
 
-void ContikiNGIeee802154GlueMac::ProcessCommands()
+void LoRaMacNodeGlueMac::ProcessCommands()
 {
     uint32_t CommandsExecuted=0;
     void* cmd;
@@ -569,7 +566,7 @@ void ContikiNGIeee802154GlueMac::ProcessCommands()
 }
 
 
-uint64_t ContikiNGIeee802154GlueMac::RegisterSignal(uint8_t* signal_name)
+uint64_t LoRaMacNodeGlueMac::RegisterSignal(uint8_t* signal_name)
 {
     std::string signalName((const char*)signal_name);
     uint64_t ret = registerSignal(signalName.c_str());
@@ -585,7 +582,7 @@ uint64_t ContikiNGIeee802154GlueMac::RegisterSignal(uint8_t* signal_name)
 /*
  * Binds timers to events and executes FSM.
  */
-void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
+void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
 {
     //EV_DETAIL << "It is wakeup time." << endl;
     switch(msg->getKind())
@@ -652,7 +649,7 @@ void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
 /**
  * We may flood our nodes, but all received packets must be sent to them
  */
-void ContikiNGIeee802154GlueMac::handleLowerPacket(Packet *packet)
+void LoRaMacNodeGlueMac::handleLowerPacket(Packet *packet)
 {
     if (packet->hasBitError()) {
         EV << "Received " << packet << " contains bit errors or collision, dropping it\n";
@@ -730,7 +727,7 @@ void ContikiNGIeee802154GlueMac::handleLowerPacket(Packet *packet)
     ProcessCommands();
 }
 
-void ContikiNGIeee802154GlueMac::receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details)
+void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details)
 {
     Enter_Method_Silent();
     if (signalID == IRadio::transmissionStateChangedSignal) {

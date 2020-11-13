@@ -17,15 +17,15 @@
 //
 
 //package labscim.linklayer.ContikiNG_IEEE802154;1
-package labscim.linklayer.ieee802154e;
 
 import inet.linklayer.contract.IWirelessInterface;
 import inet.networklayer.common.InterfaceEntry;
 import inet.physicallayer.contract.packetlevel.IRadio;
-import labscim.linklayer.ieee802154e.ContikiNGIeee802154GlueMac;
+import labscim.linklayer.lora.LoRaMacNodeGlueMac;
+package labscim.linklayer.lora;
 
 
-module ContikiNGInterface extends InterfaceEntry like IWirelessInterface
+module LoRaMacInterface extends InterfaceEntry like IWirelessInterface
 {
     parameters:
         @class(inet::InterfaceEntry);
@@ -39,7 +39,7 @@ module ContikiNGInterface extends InterfaceEntry like IWirelessInterface
         output upperLayerOut;
         input radioIn @labels(ISignal);
     submodules:
-        mac: ContikiNGIeee802154GlueMac {
+        mac: LoRaMacNodeGlueMac {
             parameters:
                 @display("p=100,100");
         }

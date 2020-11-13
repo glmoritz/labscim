@@ -22,18 +22,18 @@
 //* part of:    Modifications to the MF-2 framework by CSEM
 //**************************************************************************/
 
-package labscim.linklayer.ieee802154e;
+package labscim.linklayer.lora;
 import inet.queueing.contract.IPacketQueue;
 import inet.linklayer.base.MacProtocolBase;
 import inet.linklayer.contract.IMacProtocol;
 
-@namespace(tsch);
+@namespace(lora);
 
 //
 // Generic CSMA protocol supporting Mac-ACKs as well as
 // constant, linear or exponential backoff times.
 //
-module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
+module LoRaMacNodeGlueMac extends MacProtocolBase like IMacProtocol
 {
     parameters:
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance

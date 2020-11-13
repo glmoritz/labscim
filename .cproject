@@ -249,13 +249,13 @@
         		
         <configuration configurationName="debug">
             			
-            <resource resourceType="PROJECT" workspacePath="/tsch"/>
+            <resource resourceType="PROJECT" workspacePath="/labscim"/>
             		
         </configuration>
         		
         <configuration configurationName="release">
             			
-            <resource resourceType="PROJECT" workspacePath="/tsch"/>
+            <resource resourceType="PROJECT" workspacePath="/labscim"/>
             		
         </configuration>
         	

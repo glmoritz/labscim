@@ -1,3 +1,3 @@
-package tsch;
+package labscim;
 
 @license(LGPL);
