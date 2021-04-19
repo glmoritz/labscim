@@ -39,6 +39,9 @@ class INET_API LoRaDimensionalTransmission : public DimensionalTransmission
 
   public:
     LoRaDimensionalTransmission(const IRadio *transmitter, const Packet *packet, const simtime_t startTime, const simtime_t endTime, const simtime_t preambleDuration, const simtime_t headerDuration, const simtime_t dataDuration, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, const IModulation *modulation, b headerLength, b dataLength, Hz centerFrequency, Hz bandwidth, bps bitrate, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& power, int LoRaSF, int LoRaCR);
+
+    virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
+
     virtual int getLoRaSF() const { return LoRaSF; }
     virtual int getLoRaCR() const { return LoRaCR; }
 };

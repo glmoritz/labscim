@@ -30,7 +30,7 @@ std::ostream& LoRaBandListening::printToStream(std::ostream& stream, int level) 
 {
     stream << "LoRaBandListening";
     if (level <= PRINT_LEVEL_DETAIL)
-        stream << ", LoRaSF = " << LoRaSF;
+        stream << ", LoRaSF = " << LoRaSF << ", ";
     return BandListening::printToStream(stream, level);
 }
 

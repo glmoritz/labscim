@@ -38,9 +38,10 @@ class INET_API LoRaDimensionalNoise : public DimensionalNoise
     const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower;
     const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>> NonLoRapower;
     const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>> Backgroundpower;
+    const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>> totalpower;
 
   public:
-    LoRaDimensionalNoise(simtime_t startTime, simtime_t endTime, Hz centerFrequency, Hz bandwidth, const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& BackgroundPower);
+    LoRaDimensionalNoise(simtime_t startTime, simtime_t endTime, Hz centerFrequency, Hz bandwidth, const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& Backgroundpower);
 
 
     virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
@@ -49,7 +50,7 @@ class INET_API LoRaDimensionalNoise : public DimensionalNoise
     virtual const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& getLoRapower(int LoRaSF) const { return LoRapower.at(LoRaSF - 7); }
     virtual const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& getBackgroundpower() const { return Backgroundpower; }
 
-    virtual const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& ComputeTotalNoise(const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6>& LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& BackgroundPower);
+    virtual const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>> ComputeTotalNoise(const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6>& LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& Backgroundpower);
 
     virtual W computeNonLoRaMinPower(simtime_t startTime, simtime_t endTime) const ;
     virtual W computeNonLoRaMaxPower(simtime_t startTime, simtime_t endTime) const ;

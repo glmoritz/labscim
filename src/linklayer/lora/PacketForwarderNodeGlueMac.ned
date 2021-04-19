@@ -33,7 +33,7 @@ import inet.linklayer.contract.IMacProtocol;
 // Generic CSMA protocol supporting Mac-ACKs as well as
 // constant, linear or exponential backoff times.
 //
-module LoRaMacNodeGlueMac extends MacProtocolBase like IMacProtocol
+module PacketForwarderNodeGlueMac extends MacProtocolBase like IMacProtocol
 {
     parameters:
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
@@ -66,7 +66,7 @@ module LoRaMacNodeGlueMac extends MacProtocolBase like IMacProtocol
         double aTurnaroundTime @unit(s) = default(0 s);//default(0.000240 s);    //Section 20.6.9 - Table 11-1 -> 12 symbols @ 50k baud
         
         string radioModule = default("^.radio");   // The path to the Radio module  //FIXME remove default value               
-        @class(LoRaMacNodeGlueMac);        
+        @class(PacketForwarderNodeGlueMac);        
         
         @statisticTemplate[nbStats](record=histogram,vector?; interpolationmode=none);
     submodules:

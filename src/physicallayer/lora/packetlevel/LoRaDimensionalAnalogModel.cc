@@ -42,7 +42,7 @@ Define_Module(LoRaDimensionalAnalogModel);
 std::ostream& LoRaDimensionalAnalogModel::printToStream(std::ostream& stream, int level) const
 {
     stream << "LoRaDimensionalAnalogModel";
-    return DimensionalAnalogModelBase::printToStream(stream, level);
+    return DimensionalAnalogModel::printToStream(stream, level);
 }
 
 const IReception *LoRaDimensionalAnalogModel::computeReception(const IRadio *receiverRadio, const ITransmission *transmission, const IArrival *arrival) const
@@ -136,6 +136,10 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
     auto loradimensionalNoise = dynamic_cast<const LoRaDimensionalNoise *>(noise);
     auto dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
     auto dimensionalNoise = check_and_cast<const DimensionalNoise *>(noise);
+    const auto& bandpassFilter = makeShared<Boxcar2DFunction<double, simsec, Hz>>(simsec(dimensionalReception->getStartTime()), simsec(dimensionalReception->getEndTime()),  dimensionalNoise->getCenterFrequency() - dimensionalNoise->getBandwidth()/2, dimensionalNoise->getCenterFrequency() + dimensionalNoise->getBandwidth()/2, 1);
+
+
+    const auto filtered_reception = loradimensionalReception->getPower()->multiply(bandpassFilter);
 
     //TODO: why is there no need to filter the noise?
     //const auto& bandpassFilter = makeShared<Boxcar2DFunction<double, simsec, Hz>>(simsec(reception->getStartTime()), simsec(reception->getEndTime()), dimensionalReception->getCenterFrequency() - dimensionalReception->getBandwidth() / 2, dimensionalReception->getCenterFrequency() + dimensionalReception->getBandwidth() / 2, 1);
@@ -144,6 +148,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
     {
         if(loradimensionalReception)
         {
+            //lora interference on lora noise
             int EquivalentLoRaSF = loradimensionalReception->getLoRaSF() - (int)log2( (loradimensionalReception->getBandwidth().get() / loradimensionalNoise->getBandwidth().get() ));
             //TODO: couldn't find a clean way to declare a new array of const pointers but adding the new noise to the correct SF
             //i think that this is the ugliest code I've ever made
@@ -152,7 +157,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
             case 7:
             {
                 std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower { \
-                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(loradimensionalReception->getPower(), loradimensionalNoise->getLoRapower(7)),\
+                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getLoRapower(7)),\
                     loradimensionalNoise->getLoRapower(8),\
                     loradimensionalNoise->getLoRapower(9),\
                     loradimensionalNoise->getLoRapower(10),\
@@ -165,7 +170,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
             {
                 std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower { \
                     loradimensionalNoise->getLoRapower(7),\
-                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(loradimensionalReception->getPower(), loradimensionalNoise->getLoRapower(8)),\
+                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getLoRapower(8)),\
                     loradimensionalNoise->getLoRapower(9),\
                     loradimensionalNoise->getLoRapower(10),\
                     loradimensionalNoise->getLoRapower(11),\
@@ -178,7 +183,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
                 std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower { \
                     loradimensionalNoise->getLoRapower(7),\
                     loradimensionalNoise->getLoRapower(8),\
-                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(loradimensionalReception->getPower(), loradimensionalNoise->getLoRapower(9)),\
+                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getLoRapower(9)),\
                     loradimensionalNoise->getLoRapower(10),\
                     loradimensionalNoise->getLoRapower(11),\
                     loradimensionalNoise->getLoRapower(12)};
@@ -191,7 +196,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
                     loradimensionalNoise->getLoRapower(7),\
                     loradimensionalNoise->getLoRapower(8),\
                     loradimensionalNoise->getLoRapower(9),\
-                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(loradimensionalReception->getPower(), loradimensionalNoise->getLoRapower(10)),\
+                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getLoRapower(10)),\
                     loradimensionalNoise->getLoRapower(11),\
                     loradimensionalNoise->getLoRapower(12)};
                 return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower());
@@ -204,7 +209,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
                     loradimensionalNoise->getLoRapower(8),\
                     loradimensionalNoise->getLoRapower(9),\
                     loradimensionalNoise->getLoRapower(10),\
-                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(loradimensionalReception->getPower(), loradimensionalNoise->getLoRapower(11)),\
+                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getLoRapower(11)),\
                     loradimensionalNoise->getLoRapower(12)};
                 return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower());
                 break;
@@ -217,7 +222,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
                     loradimensionalNoise->getLoRapower(9),\
                     loradimensionalNoise->getLoRapower(10),\
                     loradimensionalNoise->getLoRapower(11),\
-                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(loradimensionalReception->getPower(), loradimensionalNoise->getLoRapower(12))};
+                    makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getLoRapower(12))};
                 return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower());
                 break;
             }
@@ -230,24 +235,37 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
         }
         else
         {
-            //non-lora interference
-            const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRaPower = makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(dimensionalReception->getPower(), loradimensionalNoise->getNonLoRapower());
+            //non-lora interference on lora noise
+            const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRaPower = makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getNonLoRapower());
             return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), loradimensionalNoise->getLoRapower(),NonLoRaPower,loradimensionalNoise->getBackgroundpower());
         }
     }
     else
     {
         //common dimensional noise
-        const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& noisePower = makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(dimensionalReception->getPower(), dimensionalNoise->getPower());
-        return new DimensionalNoise(reception->getStartTime(), reception->getEndTime(), dimensionalReception->getCenterFrequency(), dimensionalReception->getBandwidth(), noisePower);
+        return DimensionalAnalogModel::computeNoise(reception, noise);
     }
 }
 
 const ISnir *LoRaDimensionalAnalogModel::computeSNIR(const IReception *reception, const INoise *noise) const
 {
-    const LoRaDimensionalReception *dimensionalReception = check_and_cast<const LoRaDimensionalReception *>(reception);
-    const LoRaDimensionalNoise *dimensionalNoise = check_and_cast<const LoRaDimensionalNoise *>(noise);
-    return new LoRaDimensionalSnir(dimensionalReception, dimensionalNoise);
+    auto loradimensionalReception = dynamic_cast<const LoRaDimensionalReception *>(reception);
+    auto loradimensionalNoise = dynamic_cast<const LoRaDimensionalNoise *>(noise);
+    if(loradimensionalReception)
+    {
+        if(loradimensionalNoise)
+        {
+            return new LoRaDimensionalSnir(loradimensionalReception, loradimensionalNoise);
+        }
+        else
+        {
+            return DimensionalAnalogModel::computeSNIR(reception, noise);
+        }
+    }
+    else
+    {
+        return DimensionalAnalogModel::computeSNIR(reception, noise);
+    }
 }
 
 

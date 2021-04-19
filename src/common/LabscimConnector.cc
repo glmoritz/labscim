@@ -14,6 +14,7 @@
 
 using namespace labscim;
 using namespace std;
+using namespace omnetpp;
 
 std::string LabscimConnector::ExecuteCommand(const char* cmd)
 {
@@ -109,9 +110,11 @@ int32_t LabscimConnector::SpawnProcess(std::string processcommand, std::string n
         mNodeInputBuffer = new buffer_circ_t;
         if(mNodeInputBuffer == NULL)
         {
+            free(cmd);
             return -1;
         }
         labscim_buffer_init(mNodeInputBuffer, (char*)(std::string("/") + node_name + std::string("in")).c_str(), BufferSize, 0);
+        free(cmd);
     }
 #endif
     return 0;
@@ -213,6 +216,121 @@ void LabscimConnector::SendRadioResponse(uint16_t RadioResponse, uint64_t Curren
 void LabscimConnector::SendRegisterResponse(uint32_t SequenceNumber, uint64_t SignalID)
 {
     signal_register_response(mNodeInputBuffer, SequenceNumber,SignalID);
+}
+
+void LabscimConnector::SendRandomNumber(uint32_t SequenceNumber, union random_number Result)
+{
+    send_random(mNodeInputBuffer, Result, SequenceNumber);
+}
+
+
+void LabscimConnector::GenerateRandomNumber(omnetpp::cRNG *rng, uint8_t distribution_type, union random_number param_1, union random_number param_2,union random_number param_3, union random_number* result)
+{
+    switch(distribution_type)
+    {
+    default:
+    case 0: // - uniform(a, b)   uniform distribution in the range [param_1,param_2)
+    {
+        result->double_number = omnetpp::uniform(rng,param_1.double_number,param_2.double_number);
+        break;
+    }
+    case 1: //exponential(mean)   exponential distribution with the given mean
+    {
+        result->double_number = omnetpp::exponential(rng,param_1.double_number);
+        break;
+    }
+    case 2: //normal(mean, stddev)    normal distribution with the given mean and standard deviation
+    {
+        result->double_number = omnetpp::normal(rng,param_1.double_number,param_2.double_number);
+        break;
+    }
+    case 3: //truncnormal(mean, stddev)   normal distribution truncated to nonnegative values
+    {
+        result->double_number = omnetpp::truncnormal(rng,param_1.double_number,param_2.double_number);
+        break;
+    }
+    case 4: //gamma_d(alpha, beta)    gamma distribution with parameters alpha>0, beta>0
+    {
+        result->double_number = omnetpp::gamma_d(rng,param_1.double_number,param_2.double_number);
+        break;
+    }
+    case 5: //beta(alpha1, alpha2)    beta distribution with parameters alpha1>0, alpha2>0
+    {
+        result->double_number = omnetpp::beta(rng,param_1.double_number,param_2.double_number);
+        break;
+    }
+    case 6: //erlang_k(k, mean)   Erlang distribution with k>0 phases and the given mean
+    {
+        result->double_number = omnetpp::erlang_k(rng,param_1.int_number,param_2.double_number);
+        break;
+    }
+    case 7: //chi_square(k)   chi-square distribution with k>0 degrees of freedom
+    {
+        result->double_number = omnetpp::chi_square(rng,param_1.int_number);
+        break;
+    }
+    case 8: //student_t(i)    student-t distribution with i>0 degrees of freedom
+    {
+        result->double_number = omnetpp::student_t(rng,param_1.int_number);
+        break;
+    }
+    case 9: //cauchy(a, b)    Cauchy distribution with parameters a,b where b>0
+    {
+        result->double_number = omnetpp::cauchy(rng,param_1.double_number,param_2.double_number);
+        break;
+    }
+    case 10: //triang(a, b, c)    triangular distribution with parameters a<=b<=c, a!=c
+    {
+        result->double_number = omnetpp::triang(rng,param_1.double_number,param_2.double_number,param_3.double_number);
+        break;
+    }
+    case 11: //lognormal(m, s)    lognormal distribution with mean m and variance s>0
+    {
+        result->double_number = omnetpp::lognormal(rng,param_1.double_number,param_2.double_number);
+        break;
+    }
+    case 12: //weibull(a, b)  Weibull distribution with parameters a>0, b>0
+    {
+        result->double_number = omnetpp::weibull(rng,param_1.double_number,param_2.double_number);
+        break;
+    }
+    case 13: //pareto_shifted(a, b, c)    generalized Pareto distribution with parameters a, b and shift c1
+    {
+        result->double_number = omnetpp::pareto_shifted(rng,param_1.double_number,param_2.double_number,param_3.double_number);
+        break;
+    }
+    //Discrete distributions
+    case 14: //intuniform(a, b)   uniform integer from a..b
+    {
+        result->int_number = omnetpp::intuniform(rng,param_1.int_number,param_2.int_number);
+        break;
+    }
+    case 15: //bernoulli(p)   result of a Bernoulli trial with probability 0<=p<=1 (1 with probability p and 0 with probability (1-p))
+    {
+        result->int_number = omnetpp::bernoulli(rng,param_1.double_number);
+        break;
+    }
+    case 16: //binomial(n, p) binomial distribution with parameters n>=0 and 0<=p<=1
+    {
+        result->int_number = omnetpp::binomial(rng,param_1.int_number,param_2.double_number);
+        break;
+    }
+    case 17: //geometric(p)   geometric distribution with parameter 0<=p<=1
+    {
+        result->int_number = omnetpp::geometric(rng,param_1.double_number);
+        break;
+    }
+    case 18: //negbinomial(n, p)  negative binomial distribution with parameters n>0 and 0<=p<=1
+    {
+        result->int_number = omnetpp::negbinomial(rng,param_1.int_number,param_2.double_number);
+        break;
+    }
+    case 19: //poisson(lambda)    Poisson distribution with parameter lambda
+    {
+        result->int_number = omnetpp::poisson(rng,param_1.double_number);
+        break;
+    }
+    }
 }
 
 

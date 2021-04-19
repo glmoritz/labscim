@@ -22,7 +22,11 @@
 #include "LoRaDimensionalNoise.h"
 #include "LoRaBandListening.h"
 #include "LoRaDimensionalSnir.h"
+#include "LoRaTags_m.h"
 
+
+#include "inet/physicallayer/common/packetlevel/ReceptionDecision.h"
+#include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
 #include "inet/common/math/Functions.h"
 #include "inet/common/Units.h"
 
@@ -40,7 +44,8 @@ namespace physicallayer {
 Define_Module(LoRaDimensionalReceiver);
 
 LoRaDimensionalReceiver::LoRaDimensionalReceiver() :
-    FlatReceiverBase()
+    FlatReceiverBase(),
+    iAmGateway(false)
 {
 }
 
@@ -50,13 +55,14 @@ void LoRaDimensionalReceiver::initialize(int stage)
     if (stage == INITSTAGE_LOCAL) {
         minInterferencePower = mW(dBmW2mW(par("minInterferencePower")));
         snirNonLoRaThreshold = mW(dBmW2mW(par("snirNonLoRaThreshold")));
+        iAmGateway = par("iAmGateway");
         LoRaSF = par("LoRaSF");
     }
 }
 
 std::ostream& LoRaDimensionalReceiver::printToStream(std::ostream& stream, int level) const
 {
-    stream << "LoRaDimensionalReceiver";
+    stream << "LoRaDimensionalReceiver. Gateway = " << iAmGateway << " LoRaSF =" << LoRaSF << ", ";
     return FlatReceiverBase::printToStream(stream, level);
 }
 
@@ -129,17 +135,27 @@ bool LoRaDimensionalReceiver::computeIsReceptionPossible(const IListening *liste
 {
     //here we can check compatibility of LoRaTx parameters (or being a gateway) and reception above sensitivity level
     const LoRaBandListening *loRaListening = check_and_cast<const LoRaBandListening *>(listening);
-    const LoRaDimensionalReception *loRaReception = check_and_cast<const LoRaDimensionalReception *>(reception);
-    if (iAmGateway == false && (loRaListening->getCenterFrequency() != loRaReception->getCenterFrequency() || loRaListening->getBandwidth() != loRaReception->getBandwidth() || loRaListening->getLoRaSF() != loRaReception->getLoRaSF())) {
-        return false;
+    const LoRaDimensionalReception *loRaReception = dynamic_cast<const LoRaDimensionalReception *>(reception);
+
+    if(loRaReception)
+    {
+        if (iAmGateway == false && (loRaListening->getCenterFrequency() != loRaReception->getCenterFrequency() || loRaListening->getBandwidth() != loRaReception->getBandwidth() || loRaListening->getLoRaSF() != loRaReception->getLoRaSF()))
+        {
+            EV_DEBUG << "Reception is not possible: Listening:" <<  loRaListening->getCenterFrequency() << ", BW" << loRaListening->getBandwidth() << "SF: "  << loRaListening->getLoRaSF() << ". Transmission: " << loRaReception->getCenterFrequency() << ", BW" << loRaReception->getBandwidth() << " SF: " << loRaReception->getLoRaSF();
+            return false;
+        }
+        else
+        {
+            W minReceptionPower = loRaReception->computeMinPower(reception->getStartTime(part), reception->getEndTime(part));
+            W sensitivity = getSensitivity(loRaReception);
+            bool isReceptionPossible = minReceptionPower >= sensitivity;
+            EV_DEBUG << "Computing whether reception is possible: minimum reception power = " << minReceptionPower << ", sensitivity = " << sensitivity << " -> reception is " << (isReceptionPossible ? "possible" : "impossible") << endl;
+            return isReceptionPossible;
+        }
     }
     else
     {
-        W minReceptionPower = loRaReception->computeMinPower(reception->getStartTime(part), reception->getEndTime(part));
-        W sensitivity = getSensitivity(loRaReception);
-        bool isReceptionPossible = minReceptionPower >= sensitivity;
-        EV_DEBUG << "Computing whether reception is possible: minimum reception power = " << minReceptionPower << ", sensitivity = " << sensitivity << " -> reception is " << (isReceptionPossible ? "possible" : "impossible") << endl;
-        return isReceptionPossible;
+        return false;
     }
 }
 
@@ -152,6 +168,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionAttempted(const IListening *list
     else
     {
         //this simulation is still not considering the LoRa capture effect (this is a good place to implement it)
+        EV_DEBUG << "Check whether reception is attempted";
         return ReceiverBase::computeIsReceptionAttempted(listening, reception, part, interference);
     }
 }
@@ -175,6 +192,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
         {
             if( W(loradimensionalsnir->getMinLoRa(LoRaSF)) < W(math::dBmW2mW(nonOrthDelta[loradimensionalReception->getLoRaSF()-7][LoRaSF-7])) )
             {
+                EV_DEBUG << "Reception is not successfull: Strong interference from SF " << LoRaSF;
                 return false;
             }
         }
@@ -182,6 +200,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
         {
             if( W(loradimensionalsnir->getMeanLoRa(LoRaSF)) < W(math::dBmW2mW(nonOrthDelta[loradimensionalReception->getLoRaSF()-7][LoRaSF-7])) )
             {
+                EV_DEBUG << "Reception is not successfull: Strong interference from SF " << LoRaSF;
                 return false;
             }
         }
@@ -215,6 +234,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
     {
         if( W(loradimensionalsnir->getMinNonLoRa()) < snirNonLoRaThreshold )
         {
+            EV_DEBUG << "Reception is not successfull: Strong interference from non lora interferers ";
             return false;
         }
     }
@@ -222,6 +242,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
     {
         if( W(loradimensionalsnir->getMeanNonLoRa()) <  snirNonLoRaThreshold )
         {
+            EV_DEBUG << "Reception is not successfull: Strong interference from non lora interferers ";
             return false;
         }
     }
@@ -237,6 +258,43 @@ const IListening *LoRaDimensionalReceiver::createListening(const IRadio *radio, 
 {
     return new LoRaBandListening(radio, startTime, endTime, startPosition, endPosition, centerFrequency, bandwidth, LoRaSF);
 }
+
+const IReceptionResult *LoRaDimensionalReceiver::computeReceptionResult(const IListening *listening, const IReception *reception, const IInterference *interference, const ISnir *snir, const std::vector<const IReceptionDecision *> *decisions) const
+{
+    auto receptionResult = FlatReceiverBase::computeReceptionResult(listening, reception, interference, snir, decisions);
+    auto loraparameters = const_cast<Packet *>(receptionResult->getPacket())->addTagIfAbsent<LoRaParamsInd>();
+
+    auto loratransmission = dynamic_cast<const LoRaDimensionalTransmission *>(reception->getTransmission());
+
+    //const LoRaDimensionalTransmission * loratransmission = const_cast<const LoRaDimensionalTransmission *>(reception->getTransmission());
+
+    loraparameters->setLoRaSF(loratransmission->getLoRaSF());
+    loraparameters->setLoRaCR(loratransmission->getLoRaCR());
+
+    auto bandparameters = const_cast<Packet *>(receptionResult->getPacket())->addTagIfAbsent<SignalBandInd>();
+    bandparameters->setBandwidth(loratransmission->getBandwidth());
+    bandparameters->setCenterFrequency(loratransmission->getCenterFrequency());
+
+    return receptionResult;
+}
+
+const IReceptionDecision *LoRaDimensionalReceiver::computeReceptionDecision(const IListening *listening, const IReception *reception, IRadioSignal::SignalPart part, const IInterference *interference, const ISnir *snir) const
+{
+    const BandListening *bandListening = check_and_cast<const BandListening *>(listening);
+    const NarrowbandReceptionBase *narrowbandReception = check_and_cast<const NarrowbandReceptionBase *>(reception);
+    if (iAmGateway || ((bandListening->getCenterFrequency() == narrowbandReception->getCenterFrequency() && bandListening->getBandwidth() == narrowbandReception->getBandwidth())))
+    {
+        auto isReceptionPossible = computeIsReceptionPossible(listening, reception, part);
+        auto isReceptionAttempted = isReceptionPossible && computeIsReceptionAttempted(listening, reception, part, interference);
+        auto isReceptionSuccessful = isReceptionAttempted && computeIsReceptionSuccessful(listening, reception, part, interference, snir);
+        return new ReceptionDecision(reception, part, isReceptionPossible, isReceptionAttempted, isReceptionSuccessful);
+    }
+    else
+    {
+        return new ReceptionDecision(reception, part, false, false, false);
+    }
+}
+
 
 
 

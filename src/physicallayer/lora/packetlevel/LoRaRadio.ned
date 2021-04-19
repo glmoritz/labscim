@@ -25,6 +25,8 @@ module LoRaRadio extends FlatRadioBase
     parameters:
         int LoRaSF;
         int LoRaCR;
+        bool iAmGateway;
+        @signal[loraradio_datarate_changed](type=double);        
         
         string signalAnalogRepresentation @enum("scalar", "dimensional") = default("dimensional");
         transmitter.typename = default(signalAnalogRepresentation == "scalar" ? "Ieee802154ScalarTransmitter" : signalAnalogRepresentation == "dimensional" ? "LoRaDimensionalTransmitter" : "");
@@ -34,7 +36,9 @@ module LoRaRadio extends FlatRadioBase
 
         bandwidth = default(125 kHz);
         LoRaSF = default(7);
-        LoRaCR = default(1); //coding rate at 4 / (4+LoRaCR)       
+        LoRaCR = default(1); //coding rate at 4 / (4+LoRaCR) 
+        iAmGateway = default(false);
+           
         
         *.bitrate = default(5470 bps);        
 
@@ -80,6 +84,6 @@ module LoRaRadio extends FlatRadioBase
         // TX Output power (typ. 3.5 dBm, ATmega256RFR2, page 564)
         transmitter.power = default(2.24mW);
 
-        @class(FlatRadioBase);
+        @class(labscim::physicallayer::LoRaRadio);
 }
 

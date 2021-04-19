@@ -27,7 +27,7 @@
 #include <cassert>
 #include <math.h>
 
-#include "ContikiNGIeee802154GlueMac.h"
+#include "PacketForwarderNodeGlueMac.h"
 #include "inet/common/FindModule.h"
 #include "inet/common/INETMath.h"
 #include "inet/common/INETUtils.h"
@@ -44,27 +44,28 @@
 #include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
 #include "inet/networklayer/common/InterfaceEntry.h"
 #include "../../common/LabscimConnector.h"
-#include "../../common/labscim-contiki-radio-protocol.h"
+#include "../../common/labscim-lora-radio-protocol.h"
+#include "../../common/lora_gateway_setup.h"
 #include "../../common/labscim_log.h"
-
-
+#include "../../common/labscim_socket.h"
+#include "../../common/sx126x_labscim.h"
+#include "../../physicallayer/lora/packetlevel/LoRaTags_m.h"
+#include "../../physicallayer/lora/packetlevel/LoRaRadioControlInfo_m.h"
+#include "../../physicallayer/lora/packetlevel/LoRaDimensionalTransmitter.h"
+#include "../../physicallayer/lora/packetlevel/LoRaDimensionalReceiver.h"
+#include "../../physicallayer/lora/packetlevel/LoRaRadio.h"
 
 using namespace inet::physicallayer;
 using namespace omnetpp;
 using namespace inet;
 
+namespace labscim {
+
+Define_Module(PacketForwarderNodeGlueMac);
 
 
 
-
-namespace tsch {
-
-Define_Module(ContikiNGIeee802154GlueMac);
-
-
-
-
-void ContikiNGIeee802154GlueMac::initialize(int stage)
+void PacketForwarderNodeGlueMac::initialize(int stage)
 {
     MacProtocolBase::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
@@ -72,16 +73,16 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
         ccaDetectionTime = par("ccaDetectionTime");
         rxSetupTime = par("rxSetupTime");
         aTurnaroundTime = par("aTurnaroundTime");
-        mCurrentBitrate = bps(par("bitrate"));
-        mCurrentMode = IRadio::RADIO_MODE_OFF;
         statisticTemplate = getProperties()->get("statisticTemplate", "nbStats");
-
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
         cModule *radioModule = getModuleFromPar<cModule>(par("radioModule"), this);
         radioModule->subscribe(IRadio::radioModeChangedSignal, this);
         radioModule->subscribe(IRadio::transmissionStateChangedSignal, this);
+        radioModule->subscribe(labscim::physicallayer::LoRaRadio::loraradio_datarate_changed, this);
+
         radio = check_and_cast<IRadio *>(radioModule);
+        mLoRaRadio = check_and_cast<labscim::physicallayer::LoRaRadio*>(radio);
 
         //check parameters for consistency
         //aTurnaroundTime should match (be equal or bigger) the RX to TX
@@ -96,27 +97,25 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
             }
         }
         radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
+        mTransmissionState == radio->getTransmissionState();
 
-        EV_DETAIL << " bitrate = " << mCurrentBitrate.get() << endl;
 
-        EV_DETAIL << "Finished Contiki Glue MAC init stage 1." << endl;
+
+        EV_DETAIL << "Finished Packet Forwarder Glue MAC init stage 1." << endl;
     }
     else if (stage == INITSTAGE_NETWORK_CONFIGURATION)
     {
-        char nodename[11];
         double boot_time = par("BootTime").doubleValue();
         uint32_t ServerPort = par("NodeProcessConnectionPort").intValue();
         char msgname[64];
         cMessage* BootMsg;
         std::string cmd("");
         std::stringstream stream;
-        stream << "node-" << std::hex << interfaceEntry->getMacAddress().getInt();
-        std::string result( stream.str() );
+        stream << "gateway-node-" << std::hex << interfaceEntry->getMacAddress().getInt();
+        mNodeName = std::string(stream.str() );
 
-
-
-        nodename[10]=0;
         nbBufferSize = par("SocketBufferSize").intValue();
+        interfaceEntry->setDatarate(mLoRaRadio->getPacketDataRate().get());
 
         if(!par("NodeDebug").boolValue())
         {
@@ -125,7 +124,7 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
 #endif
             cmd = cmd + std::string(par("NodeProcessCommand").stringValue()) + std::string(" -b") + std::to_string(par("SocketBufferSize").intValue());
             cmd = cmd + std::string(" -p") + std::to_string(par("NodeProcessConnectionPort").intValue());
-            cmd = cmd + std::string(" -n") + result + std::string(" -alocalhost");
+            cmd = cmd + std::string(" -n") + mNodeName + std::string(" -alocalhost");
             cmd = cmd + std::string(" ") + std::string(par("NodeExtraArguments").stringValue());
             cmd = cmd + std::string(" > /dev/null 2> /dev/null < /dev/null &");
             //cmd = cmd + std::string(" &");
@@ -133,22 +132,23 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
 
         //ssh guilherme@guilherme-ubuntu.local '/usr/bin/nohup /home/guilherme/contiki-ng/examples/hello-world/hello-world.labscim > /dev/null 2> /dev/null < /dev/null &'
 
-        SpawnProcess(cmd, result, ServerPort, nbBufferSize);
+        SpawnProcess(cmd, mNodeName, ServerPort, nbBufferSize);
 
         //SpawnProcess("::1", "/home/guilherme/contiking/examples/hello/hello","-b 512 -p 9608" , 9608, nbBufferSize);
-        sprintf(msgname, "node-boot-%s", stream.str());
-        BootMsg = new cMessage(msgname);
+        BootMsg = new cMessage((mNodeName + "-boot").c_str());
         BootMsg->setKind(BOOT_MSG);
         scheduleAt(boot_time, BootMsg);
+
+        radio->setRadioMode(IRadio::RADIO_MODE_SLEEP);
     }
 }
 
-void ContikiNGIeee802154GlueMac::finish()
+void PacketForwarderNodeGlueMac::finish()
 {
 
 }
 
-ContikiNGIeee802154GlueMac::~ContikiNGIeee802154GlueMac()
+PacketForwarderNodeGlueMac::~PacketForwarderNodeGlueMac()
 {
     for (cMessage* ptr: mScheduledTimerMsgs)
     {
@@ -161,12 +161,13 @@ ContikiNGIeee802154GlueMac::~ContikiNGIeee802154GlueMac()
     }
 }
 
-void ContikiNGIeee802154GlueMac::configureInterfaceEntry()
+void PacketForwarderNodeGlueMac::configureInterfaceEntry()
 {
     MacAddress address = parseMacAddressParameter(par("address"));
 
     // data rate
-    interfaceEntry->setDatarate(mCurrentBitrate.get());
+    const double EstimatedDataRate =  5469; //SF7 @ 125kHz -> will be adjusted upon radio configuration
+    interfaceEntry->setDatarate(EstimatedDataRate);
 
     // generate a link-layer address to be used as interface token for IPv6
     interfaceEntry->setMacAddress(address);
@@ -182,136 +183,89 @@ void ContikiNGIeee802154GlueMac::configureInterfaceEntry()
  * Encapsulates the message to be transmitted and pass it on
  * to the FSM main method for further processing.
  */
-void ContikiNGIeee802154GlueMac::handleUpperPacket(Packet *packet)
+void PacketForwarderNodeGlueMac::handleUpperPacket(Packet *packet)
 {
     //we just ignore any upper packet
     delete packet;
 }
 
-
-void ContikiNGIeee802154GlueMac::attachSignal(Packet *mac, simtime_t_cref startTime)
+void PacketForwarderNodeGlueMac::attachSignal(Packet *mac, simtime_t_cref startTime)
 {
-    simtime_t duration = mac->getBitLength() / mCurrentBitrate.get();
-    mac->setDuration(duration);
+    mac->setDuration(mLoRaRadio->getPacketRadioTimeOnAir(mac));
 }
 
-#define DOT_15_4G_CHAN0_FREQUENCY 902200
-#define DOT_15_4G_CHANNEL_SPACING    200
-
-void ContikiNGIeee802154GlueMac::configureRadio(Hz CenterFrequency, Hz Bandwidth, W Power, bps Bitrate, int mode /*= -1*/)
+void PacketForwarderNodeGlueMac::configureRadio(ConfigureLoRaRadioCommand* config_msg)
 {
-    auto configureCommand = new ConfigureRadioCommand();
-    auto request = new Message("changeChannel", RADIO_C_CONFIGURE);
-
-    if(
-            (mCurrentMode != mode) ||                       \
-            (mCurrentCenterFrequency != CenterFrequency) || \
-            (mCurrentBandwidth != Bandwidth) ||             \
-            (mCurrentPower != Power) ||                     \
-            (mCurrentBitrate != Bitrate)                    \
-    )
-    {
-#ifdef LABSCIM_LOG_COMMANDS
-        std::stringstream stream;
-        stream << "Radio CH " << (float)(((float)(CenterFrequency.get()/1000) -(float)DOT_15_4G_CHAN0_FREQUENCY)/(float)DOT_15_4G_CHANNEL_SPACING) << " at " << CenterFrequency  << ", " << Bitrate << " @ " << Bandwidth << " BW " << Power << " tx. Radio mode: ";
-        switch(mode)
-        {
-        case IRadio::RADIO_MODE_OFF:
-        {
-            stream << "OFF";
-            break;
-        }
-        case IRadio::RADIO_MODE_SLEEP:
-        {
-            stream << "SLEEPING";
-            break;
-        }
-        case IRadio::RADIO_MODE_RECEIVER:
-        {
-            stream << "RECEIVER";
-            break;
-        }
-        case IRadio::RADIO_MODE_TRANSMITTER:
-        {
-            stream << "TRANSMITTER";
-            break;
-        }
-        case IRadio::RADIO_MODE_TRANSCEIVER:
-        {
-            stream << "TRANSCEIVER";
-            break;
-        }
-        case IRadio::RADIO_MODE_SWITCHING:
-        {
-            stream << "SWITCHING";
-            break;
-        }
-        }
-        stream << "\n";
-        Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
-        EV_DEBUG << (uint8_t*)stream.str().c_str();
-#endif
-
-        configureCommand->setPower(Power);
-        configureCommand->setBitrate(Bitrate);
-        configureCommand->setCenterFrequency(CenterFrequency);
-        configureCommand->setBandwidth(Bandwidth);
-        configureCommand->setRadioMode(mode);
-        request->setControlInfo(configureCommand);
-        mCurrentMode = mode;
-        mCurrentCenterFrequency = CenterFrequency;
-        mCurrentBandwidth = Bandwidth;
-        mCurrentPower = Power;
-        mCurrentBitrate = Bitrate;
-        sendDown(request);
-    }
-#ifdef LABSCIM_LOG_COMMANDS
-    else
-    {
-        std::stringstream stream;
-        stream << "Redundant configure radio command\n";
-        Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
-        EV_DEBUG << (uint8_t*)stream.str().c_str();
-    }
-#endif
+    auto request = new Message("ConfigureRadio", RADIO_C_CONFIGURE);
+    request->setControlInfo(config_msg);
+    sendDown(request);
 }
 
 
-void ContikiNGIeee802154GlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
+void PacketForwarderNodeGlueMac::configureRadio(Hz CenterFrequency, Hz Bandwidth, W Power, bps Bitrate, int mode /*= -1*/)
 {
 
+    auto configureCommand = new ConfigureLoRaRadioCommand();
+
+#ifdef LABSCIM_LOG_COMMANDS
+    std::stringstream stream;
+    stream << "Radio CH " << "?" << " at " << CenterFrequency  << ", " << Bitrate << " @ " << Bandwidth << " BW " << Power << " tx. Radio mode: ";
+    switch(mode)
+    {
+    case IRadio::RADIO_MODE_OFF:
+    {
+        stream << "OFF";
+        break;
+    }
+    case IRadio::RADIO_MODE_SLEEP:
+    {
+        stream << "SLEEPING";
+        break;
+    }
+    case IRadio::RADIO_MODE_RECEIVER:
+    {
+        stream << "RECEIVER";
+        break;
+    }
+    case IRadio::RADIO_MODE_TRANSMITTER:
+    {
+        stream << "TRANSMITTER";
+        break;
+    }
+    case IRadio::RADIO_MODE_TRANSCEIVER:
+    {
+        stream << "TRANSCEIVER";
+        break;
+    }
+    case IRadio::RADIO_MODE_SWITCHING:
+    {
+        stream << "SWITCHING";
+        break;
+    }
+    }
+    stream << "\n";
+    Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
+    EV_DEBUG << (uint8_t*)stream.str().c_str();
+#endif
+
+    configureCommand->setPower(Power);
+    configureCommand->setBitrate(Bitrate);
+    configureCommand->setCenterFrequency(CenterFrequency);
+    configureCommand->setBandwidth(Bandwidth);
+    configureCommand->setRadioMode(mode);
+    configureRadio(configureCommand);
+
+}
+
+
+void PacketForwarderNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
+{
     switch(cmd->radio_command)
     {
-    case CONTIKI_RADIO_SETUP:
+    case LORA_RADIO_SEND:
     {
-        //802.15.4g std sec 20.6.4
-        //Channel switch time shall be less than or equal to 500 μs. The channel switch time is defined as the time
-        //elapsed when changing to a new channel, including any required settling time.
-        //... but for now we set that at 0us
-        struct contiki_radio_setup* setup = (struct contiki_radio_setup*)cmd->radio_struct;
-        configureRadio(Hz(setup->Frequency_Hz), Hz(setup->Bandwidth_Hz), mW(math::dBmW2mW(setup->Power_dbm)), bps(setup->Bitrate_bps), mCurrentMode);
-        if(!mRadioConfigured)
-        {
-            cModule *radioModule = getModuleFromPar<cModule>(par("radioModule"), this);
-            mRadioConfigured = true;
-            radioModule->subscribe(IRadio::receptionStateChangedSignal, this);
-        }
-        free(cmd);
-        break;
-    }
-    case CONTIKI_RADIO_SET_MODE:
-    {
-        struct contiki_radio_mode* mode = (struct contiki_radio_mode*)cmd->radio_struct;
-        configureRadio(mCurrentCenterFrequency, mCurrentBandwidth, mCurrentPower, mCurrentBitrate, mode->RadioMode);
-        free(cmd);
-        break;
-    }
-    case CONTIKI_RADIO_SEND:
-    {
-        struct contiki_radio_payload* payload = (struct contiki_radio_payload*)cmd->radio_struct;
-        char msgname[20];
-        sprintf(msgname, "packet-node-%d", getIndex());
-        auto cmsg = new Packet(msgname);
+        struct lora_radio_payload* payload = (struct lora_radio_payload*)cmd->radio_struct;
+        auto cmsg = new Packet((mNodeName + "-packet").c_str());
         auto dataMessage = makeShared<BytesChunk>();
         std::vector<uint8_t> vec(payload->Message, payload->Message + payload->MessageSize_bytes);
         dataMessage->setBytes(vec);
@@ -319,12 +273,23 @@ void ContikiNGIeee802154GlueMac::PerformRadioCommand(struct labscim_radio_comman
         cmsg->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ieee802154);
         cmsg->insertAtBack(dataMessage);
 
+        auto loraparameters = cmsg->addTagIfAbsent<LoRaParamsReq>();
+        loraparameters->setLoRaSF(payload->LoRaSF);
+        loraparameters->setLoRaCR(payload->LoRaCR);
+
+        auto bandparameters = cmsg->addTagIfAbsent<SignalBandReq>();
+        bandparameters->setBandwidth(Hz(payload->LoRaBandwidth_Hz));
+        bandparameters->setCenterFrequency(Hz(payload->CenterFrequency_Hz));
+
+        auto powerparameters = cmsg->addTagIfAbsent<SignalPowerReq>();
+        powerparameters->setPower(mW(dBmW2mW(payload->TxPower_dbm)));
+
         radio->setRadioMode(IRadio::RADIO_MODE_TRANSMITTER);
-        attachSignal(cmsg, simTime() + aTurnaroundTime);
+        attachSignal(cmsg, simTime() + aTurnaroundTime + (((float)(payload->Tx_Delay_us))/1e6));
         mTransmitRequestSeqNo = cmd->hdr.sequence_number;
 
         // give time for the radio to be in Tx state before transmitting
-        sendDelayed(cmsg, aTurnaroundTime, lowerLayerOutGateId);
+        sendDelayed(cmsg, aTurnaroundTime+(((float)(payload->Tx_Delay_us))/1e6), lowerLayerOutGateId);
 
 #ifdef LABSCIM_LOG_COMMANDS
         std::stringstream stream;
@@ -332,69 +297,134 @@ void ContikiNGIeee802154GlueMac::PerformRadioCommand(struct labscim_radio_comman
         Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
         EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
-
-
         free(cmd);
         break;
     }
-    case CONTIKI_RADIO_PERFORM_CCA:
+    case LORA_RADIO_IS_CHANNEL_FREE:
     {
         if(mCCATimerMsg == nullptr)
         {
-            char msgname[20];
+            struct lora_is_channel_free* params = (struct lora_is_channel_free*)cmd;
             cMessage* CCAMsg;
             double us = simTime().dbl() * 1000000;
-            sprintf(msgname, "perform-cca-%d", getIndex());
-            CCAMsg = new cMessage(msgname);
+            CCAMsg = new cMessage((mNodeName + "-perform-cca").c_str());
             CCAMsg->setKind(CCA_ENDED);
             CCAMsg->setContextPointer((void*)cmd);
             mCCATimerMsg = CCAMsg;
-            scheduleAt(us + rxSetupTime + ccaDetectionTime, CCAMsg);
+            scheduleAt(us + rxSetupTime + ((double)params->MaxCarrierSenseTime_us)/1000000.0, CCAMsg);
 #ifdef LABSCIM_LOG_COMMANDS
             std::stringstream stream;
             stream << "CCA Start\n";
             Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
             EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
-            configureRadio(mCurrentCenterFrequency, mCurrentBandwidth, mCurrentPower, mCurrentBitrate, IRadio::RADIO_MODE_RECEIVER);
+            auto configureCommand = new ConfigureLoRaRadioCommand();
+            configureCommand->setBandwidth(Hz(params->RxBandWidth_Hz));
+            configureCommand->setCenterFrequency(Hz(params->Frequency_Hz));
+            configureCommand->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
+            configureRadio(configureCommand);
         }
     }
-    case CONTIKI_RADIO_GET_STATE:
+    case LORA_RADIO_GET_STATE:
     {
-        struct contiki_radio_state state;
-        state.State = (uint32_t)radio->getReceptionState();
-        SendRadioResponse(CONTIKI_RADIO_STATE_RESULT, (uint64_t)round((simTime().dbl() * 1000000)),(uint8_t*)&state, sizeof(struct contiki_radio_state), cmd->hdr.sequence_number);
+        struct lora_radio_status state;
+        state.RadioMode = (uint32_t)radio->getRadioMode();
+        state.ChannelIsFree = (radio->getReceptionState() == IRadio::RECEPTION_STATE_IDLE)?1:0;
+        SendRadioResponse(LORA_RADIO_GET_STATE_RESULT, (uint64_t)std::round((simTime().dbl() * 1000000)),(uint8_t*)&state, sizeof(struct lora_radio_status), cmd->hdr.sequence_number);
         free(cmd);
 #ifdef LABSCIM_LOG_COMMANDS
         std::stringstream stream;
         stream << "Radio get state: ";
-        switch(state.State)
+        switch(state.RadioMode)
         {
-            case RECEPTION_STATE_UNDEFINED:
-            {
-                stream << "UNDEFINED";
-                break;
-            }
-            case RECEPTION_STATE_IDLE:
-            {
-                stream << "IDLE";
-                break;
-            }
-            case RECEPTION_STATE_BUSY:
-            {
-                stream << "BUSY";
-                break;
-            }
-            case RECEPTION_STATE_RECEIVING:
-            {
-                stream << "RECEIVING";
-                break;
-            }
+        case RECEPTION_STATE_UNDEFINED:
+        {
+            stream << "UNDEFINED";
+            break;
+        }
+        case RECEPTION_STATE_IDLE:
+        {
+            stream << "IDLE";
+            break;
+        }
+        case RECEPTION_STATE_BUSY:
+        {
+            stream << "BUSY";
+            break;
+        }
+        case RECEPTION_STATE_RECEIVING:
+        {
+            stream << "RECEIVING";
+            break;
+        }
         }
         stream << "\n";
         Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
         EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
+        break;
+    }
+    case LORA_RADIO_SET_MODEM:
+    {
+        struct lora_set_modem* modem_type = (struct lora_set_modem*)cmd->radio_struct;
+        if(!mRadioConfigured)
+        {
+            cModule *radioModule = getModuleFromPar<cModule>(par("radioModule"), this);
+            mRadioConfigured = true;
+            radioModule->subscribe(IRadio::receptionStateChangedSignal, this);
+        }
+        if(modem_type->Modem!=1)
+        {
+            throw cRuntimeError("Only LoRa Modulation is Supported by this module");
+        }
+        free(cmd);
+        break;
+    }
+    case LORA_RADIO_SET_MODULATION_PARAMS:
+    {
+        struct lora_set_modulation_params* mp = (struct lora_set_modulation_params*)cmd->radio_struct;
+        auto configureCommand = new ConfigureLoRaRadioCommand();
+        configureCommand->setPower(mW(dBmW2mW(mp->TransmitPower_dBm)));
+        configureCommand->setLoRaSF(mp->ModulationParams.Params.LoRa.SpreadingFactor);
+        configureCommand->setLoRaCR(mp->ModulationParams.Params.LoRa.CodingRate);
+        configureCommand->setLowDataRate_optimization(mp->ModulationParams.Params.LoRa.LowDatarateOptimize);
+        configureCommand->setBandwidth(Hz(mp->ModulationParams.Params.LoRa.Bandwidth));
+        free(cmd);
+        configureRadio(configureCommand);
+        break;
+    }
+    case LORA_RADIO_SET_PACKET_PARAMS:
+    {
+        struct lora_set_packet_params* pp = (struct lora_set_packet_params*)cmd->radio_struct;
+        auto configureCommand = new ConfigureLoRaRadioCommand();
+        configureCommand->setHeader_enabled(pp->PacketParams.Params.LoRa.HeaderType);
+        configureCommand->setPayload_length(pp->PacketParams.Params.LoRa.PayloadLength);
+        configureCommand->setCRC_enabled(pp->PacketParams.Params.LoRa.CrcMode);
+        configureCommand->setPreamble_length(pp->PacketParams.Params.LoRa.PreambleLength);
+        free(cmd);
+        configureRadio(configureCommand);
+        break;
+    }
+    case LORA_RADIO_SET_RX:
+    {
+        struct lora_set_rx* srx = (struct lora_set_rx*)cmd->radio_struct;
+        radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
+        free(cmd);
+        break;
+    }
+    case LORA_RADIO_SET_IDLE:
+    {
+        radio->setRadioMode(IRadio::RADIO_MODE_SLEEP);
+        free(cmd);
+        break;
+    }
+    case LORA_RADIO_SET_CHANNEL:
+    {
+        struct lora_set_frequency* lsf = (struct lora_set_frequency*)cmd->radio_struct;
+        auto configureCommand = new ConfigureLoRaRadioCommand();
+        configureCommand->setCenterFrequency(Hz(lsf->Frequency_Hz));
+        free(cmd);
+        configureRadio(configureCommand);
         break;
     }
     default:
@@ -405,7 +435,7 @@ void ContikiNGIeee802154GlueMac::PerformRadioCommand(struct labscim_radio_comman
     }
 }
 
-cMessage* ContikiNGIeee802154GlueMac::GetScheduledTimeEvent(uint32_t sequence_number)
+cMessage* PacketForwarderNodeGlueMac::GetScheduledTimeEvent(uint32_t sequence_number)
 {
     std::list<cMessage*>::iterator it;
     for (it = mScheduledTimerMsgs.begin(); it != mScheduledTimerMsgs.end(); ++it)
@@ -422,7 +452,7 @@ cMessage* ContikiNGIeee802154GlueMac::GetScheduledTimeEvent(uint32_t sequence_nu
     return nullptr;
 }
 
-void ContikiNGIeee802154GlueMac::ProcessCommands()
+void PacketForwarderNodeGlueMac::ProcessCommands()
 {
     uint32_t CommandsExecuted=0;
     void* cmd;
@@ -460,13 +490,11 @@ void ContikiNGIeee802154GlueMac::ProcessCommands()
                 }
                 case LABSCIM_SET_TIME_EVENT:
                 {
-                    char msgname[32];
                     struct labscim_set_time_event* ste = (struct labscim_set_time_event*)cmd;
                     cMessage* TimeEventMsg;
                     double us = simTime().dbl() * 1000000;
-                    sprintf(msgname, "node-timer-%d", getIndex());
-                    TimeEventMsg = new cMessage(msgname);
-                    TimeEventMsg->setKind(CONTIKI_TIMER_MSG);
+                    TimeEventMsg = new cMessage((mNodeName + "-timer").c_str());
+                    TimeEventMsg->setKind(LORAMAC_TIMER_MSG);
                     TimeEventMsg->setContextPointer((void*)ste);
                     if(ste->is_relative)
                     {
@@ -554,6 +582,13 @@ void ContikiNGIeee802154GlueMac::ProcessCommands()
                     free(cmd);
                     break;
                 }
+                case LABSCIM_GET_RANDOM:
+                {
+                    struct labscim_get_random* get_random = (struct labscim_get_random*)cmd;
+                    union random_number resp;
+                    GenerateRandomNumber(getRNG(0), get_random->distribution_type, get_random->param_1, get_random->param_2, get_random->param_3, &resp);
+                    SendRandomNumber(get_random->hdr.sequence_number,resp);
+                }
                 default:
                 {
                     CommandsExecuted--;
@@ -569,7 +604,7 @@ void ContikiNGIeee802154GlueMac::ProcessCommands()
 }
 
 
-uint64_t ContikiNGIeee802154GlueMac::RegisterSignal(uint8_t* signal_name)
+uint64_t PacketForwarderNodeGlueMac::RegisterSignal(uint8_t* signal_name)
 {
     std::string signalName((const char*)signal_name);
     uint64_t ret = registerSignal(signalName.c_str());
@@ -585,17 +620,19 @@ uint64_t ContikiNGIeee802154GlueMac::RegisterSignal(uint8_t* signal_name)
 /*
  * Binds timers to events and executes FSM.
  */
-void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
+void PacketForwarderNodeGlueMac::handleSelfMessage(cMessage *msg)
 {
     bool WaitForCommand = true;
+    mCurrentProcessingMsg=msg;
 
     //EV_DETAIL << "It is wakeup time." << endl;
     switch(msg->getKind())
     {
     case BOOT_MSG:
     {
-        struct contiki_node_setup setup_msg;
-        setup_msg.output_logs = (uint8_t)par("OutputLogs").boolValue();
+        struct lora_gateway_setup setup_msg;
+        setup_msg.output_logs = par("OutputLogs").boolValue()?1:0;
+        setup_msg.IsMaster = par("IsMaster").boolValue()?1:0;
         //EV_DETAIL << "Boot Message." << endl;
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
         interfaceEntry->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
@@ -606,13 +643,14 @@ void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
         Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
         EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
-        SendProtocolBoot((void*)&setup_msg,sizeof(struct contiki_node_setup));
+        SendProtocolBoot((void*)&setup_msg,sizeof(struct lora_gateway_setup));
+        delete msg;
         break;
     }
-    case CONTIKI_TIMER_MSG:
+    case LORAMAC_TIMER_MSG:
     {
         //EV_DETAIL << "Timer Message." << endl;
-        uint64_t us = (uint64_t)(round(simTime().dbl() * 1000000));
+        uint64_t us = (uint64_t)(std::round(simTime().dbl() * 1000000));
         if(msg->getContextPointer()!=nullptr)
         {
             struct labscim_set_time_event* ste = (struct labscim_set_time_event*)msg->getContextPointer();
@@ -624,12 +662,13 @@ void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
         {
             WaitForCommand = false;
         }
+        delete msg;
         break;
     }
     case CCA_ENDED:
     {
         struct labscim_radio_command* cmd = (struct labscim_radio_command*)msg->getContextPointer();
-        struct contiki_radio_cca ChannelFree;
+        struct lora_is_channel_free_result ChannelFree;
         //PERFORM CCA
         ChannelFree.ChannelIsFree = (radio->getReceptionState() == IRadio::RECEPTION_STATE_IDLE)?1:0;
 #ifdef LABSCIM_LOG_COMMANDS
@@ -639,30 +678,28 @@ void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
         EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
         //radio->setRadioMode(IRadio::RADIO_MODE_SLEEP); //DO IT?
-        SendRadioResponse(CONTIKI_RADIO_CCA_RESULT, (uint64_t)round((simTime().dbl() * 1000000)),(uint8_t*)&ChannelFree, sizeof(struct contiki_radio_cca), cmd->hdr.sequence_number);
+        SendRadioResponse(LORA_RADIO_IS_CHANNEL_FREE_RESULT, (uint64_t)std::round((simTime().dbl() * 1000000)),(uint8_t*)&ChannelFree, sizeof(struct lora_is_channel_free_result), cmd->hdr.sequence_number);
         mCCATimerMsg = nullptr;
         free(cmd);
+        delete msg;
         break;
     }
     default:
     {
         WaitForCommand = false;
+        delete msg;
         break;
     }
     }
-    delete msg;
 
     if(WaitForCommand)
     {
         ProcessCommands();
     }
+    mCurrentProcessingMsg=nullptr;
 }
 
-
-/**
- * We may flood our nodes, but all received packets must be sent to them
- */
-void ContikiNGIeee802154GlueMac::handleLowerPacket(Packet *packet)
+void PacketForwarderNodeGlueMac::handleLowerPacket(Packet *packet)
 {
     if (packet->hasBitError()) {
         EV << "Received " << packet << " contains bit errors or collision, dropping it\n";
@@ -672,9 +709,9 @@ void ContikiNGIeee802154GlueMac::handleLowerPacket(Packet *packet)
         delete packet;
         return;
     }
-    struct contiki_radio_payload* payload;
+    struct lora_radio_payload* payload;
     uint64_t message_size = packet->getByteLength();
-    payload = (struct contiki_radio_payload*)malloc(FIXED_SIZEOF_CONTIKI_RADIO_PAYLOAD + message_size);
+    payload = (struct lora_radio_payload*)malloc(FIXED_SIZEOF_LORA_RADIO_PAYLOAD + message_size);
     if(payload==NULL)
     {
         //dammit, something very wrong
@@ -682,15 +719,39 @@ void ContikiNGIeee802154GlueMac::handleLowerPacket(Packet *packet)
         return;
     }
     payload->MessageSize_bytes = message_size;
-    payload->RX_timestamp_us = (uint64_t)(round(packet->getArrivalTime().dbl() * 1000000));
+    payload->RX_timestamp_us = (uint64_t)(std::round(packet->getArrivalTime().dbl() * 1000000));
+    payload->CRCError = 0;
 
-    if (packet->findTag<SignalPowerInd>() != nullptr) {
-        auto signalPowerInd = packet->getTag<SignalPowerInd>();
-        payload->RSSI_dbm_x100 = (uint32_t)round(100*math::mW2dBmW(signalPowerInd->getPower().get()*1000));
+    if (packet->findTag<LoRaParamsInd>() != nullptr) {
+        auto lpi = packet->getTag<LoRaParamsInd>();
+        payload->LoRaCR = lpi->getLoRaCR();
+        payload->LoRaSF = lpi->getLoRaSF();
     }
     else
     {
-        payload->RSSI_dbm_x100 = 0;
+        payload->LoRaCR = 0;
+        payload->LoRaSF = 0;
+    }
+
+    if (packet->findTag<SignalBandInd>() != nullptr) {
+        auto signalBandInd = packet->getTag<SignalBandInd>();
+        payload->CenterFrequency_Hz = signalBandInd->getCenterFrequency().get();
+        payload->LoRaBandwidth_Hz = signalBandInd->getBandwidth().get();
+    }
+    else
+    {
+        payload->CenterFrequency_Hz = 0;
+        payload->LoRaBandwidth_Hz = 0;
+    }
+
+
+    if (packet->findTag<SignalPowerInd>() != nullptr) {
+        auto signalPowerInd = packet->getTag<SignalPowerInd>();
+        payload->RSSI_dbm = math::mW2dBmW(signalPowerInd->getPower().get()*1000);
+    }
+    else
+    {
+        payload->RSSI_dbm = -200.0;
     }
 
     const auto& data = packet->popAtFront<BytesChunk>();
@@ -698,33 +759,41 @@ void ContikiNGIeee802154GlueMac::handleLowerPacket(Packet *packet)
 
     if (packet->findTag<SnirInd>() != nullptr) {
         auto snir = packet->getTag<SnirInd>();
-        double snir_dbm = math::mW2dBmW(snir->getAverageSnir());
-
-//      802.15.4g - sec 10.2.6
-//        The LQI measurement is a characterization of the strength and/or quality of a received packet. The
-//        measurement may be implemented using receiver ED, a signal-to-noise ratio estimation, or a combination of
-//        these methods. The use of the LQI result by the network or application layers is not specified in 1this
-//        standard.
-//        The LQI measurement shall be performed for each received packet. The minimum and maximum LQI
-//        values (0x00 and 0xff) should be associated with the lowest and highest quality compliant signals detectable
-//        by the receiver, and LQI values in between should be uniformly distributed between these two limits. At
-//        least eight unique values of LQI shall be used.
-
-        //0dbm is maximum LQI, -90dbm minimum
-        if(snir_dbm < -90.0)
-        {
-            snir_dbm=-90.0;
-        }
-        payload->LQI = (uint32_t)round(((snir_dbm+90.0)*255.0)/90.0);
-        if(payload->LQI > 255)
-        {
-            payload->LQI = 255;
-        }
+        float snir_db = math::fraction2dB(snir->getAverageSnir());
+        payload->SNR_db = snir_db;
     }
     else
     {
-        payload->LQI = 0;
+        payload->SNR_db = -200.0;
     }
+
+    if (packet->findTag<LoRaParamsInd>() != nullptr)
+    {
+        auto loraind = packet->getTag<LoRaParamsInd>();
+        payload->LoRaSF = loraind->getLoRaSF();
+        payload->LoRaCR = loraind->getLoRaCR();
+    }
+    else
+    {
+        //something wrong
+        payload->LoRaSF = 0;
+        payload->LoRaCR = 0;
+    }
+
+
+    if (packet->findTag<SignalBandInd>() != nullptr)
+    {
+        auto bandind = packet->getTag<SignalBandInd>();
+        payload->CenterFrequency_Hz = (uint32_t)bandind->getCenterFrequency().get();
+        payload->LoRaBandwidth_Hz = (uint32_t)bandind->getBandwidth().get();
+    }
+    else
+    {
+        //something wrong
+        payload->CenterFrequency_Hz = 0;
+        payload->LoRaBandwidth_Hz = 0;
+    }
+
     delete packet;
 #ifdef LABSCIM_LOG_COMMANDS
     std::stringstream stream;
@@ -732,26 +801,42 @@ void ContikiNGIeee802154GlueMac::handleLowerPacket(Packet *packet)
     Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
     EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
-    //dispatch packet to contiki upper layers
-    SendRadioResponse(CONTIKI_RADIO_PACKET_RECEIVED, (uint64_t)round((simTime().dbl() * 1000000)),(void*)payload, FIXED_SIZEOF_CONTIKI_RADIO_PAYLOAD + message_size, 0);
+    if(radio->getRadioMode()!=IRadio::RADIO_MODE_RECEIVER)
+    {
+        // lora gateway radio is always listening
+        radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
+    }
 
+
+
+
+    //dispatch packet to LoRaMAC upper layers
+    SendRadioResponse(LORA_RADIO_PACKET_RECEIVED, (uint64_t)std::round((simTime().dbl() * 1000000)),(void*)payload, FIXED_SIZEOF_LORA_RADIO_PAYLOAD + message_size, 0);
     free(payload);
-
     ProcessCommands();
 }
 
-void ContikiNGIeee802154GlueMac::receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details)
+void PacketForwarderNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID, double value, cObject *details)
+{
+    if(signalID == labscim::physicallayer::LoRaRadio::loraradio_datarate_changed)
+    {
+        interfaceEntry->setDatarate(value);
+    }
+}
+
+void PacketForwarderNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details)
 {
     Enter_Method_Silent();
     if (signalID == IRadio::transmissionStateChangedSignal) {
         IRadio::TransmissionState newRadioTransmissionState = static_cast<IRadio::TransmissionState>(value);
-        if (transmissionState == IRadio::TRANSMISSION_STATE_TRANSMITTING && newRadioTransmissionState == IRadio::TRANSMISSION_STATE_IDLE)
+        if (mTransmissionState == IRadio::TRANSMISSION_STATE_TRANSMITTING && newRadioTransmissionState == IRadio::TRANSMISSION_STATE_IDLE)
         {
             if(mTransmitRequestSeqNo!=0)
             {
-                struct contiki_radio_send_response response;
-                response.ResponseCode = 1; //nothing is returned by now
-                SendRadioResponse(CONTIKI_RADIO_SEND_COMPLETED, (uint64_t)round((simTime().dbl() * 1000000)),(uint8_t*)&response, sizeof(struct contiki_radio_send_response), mTransmitRequestSeqNo);
+                struct lora_radio_status response;
+                response.RadioMode = value; //nothing is returned by now
+                response.ChannelIsFree = (radio->getReceptionState() == IRadio::RECEPTION_STATE_IDLE)?1:0;
+                SendRadioResponse(LORA_RADIO_SEND_COMPLETED, (uint64_t)std::round((simTime().dbl() * 1000000)),(uint8_t*)&response, sizeof(struct lora_radio_status), mTransmitRequestSeqNo);
 #ifdef LABSCIM_LOG_COMMANDS
                 std::stringstream stream;
                 stream << "TX is over\n";
@@ -759,14 +844,13 @@ void ContikiNGIeee802154GlueMac::receiveSignal(cComponent *source, simsignal_t s
                 EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
                 mTransmitRequestSeqNo = 0;
-                mCurrentMode = radio->getReceptionState();
                 //radio must be kept listening
-                configureRadio(mCurrentCenterFrequency,mCurrentBandwidth, mCurrentPower, mCurrentBitrate, IRadio::RADIO_MODE_RECEIVER);
+                radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
                 ProcessCommands();
             }
             //maybe we just return when over?
         }
-        transmissionState = newRadioTransmissionState;
+        mTransmissionState = newRadioTransmissionState;
     }
     else if(signalID == IRadio::receptionStateChangedSignal)
     {
@@ -774,9 +858,10 @@ void ContikiNGIeee802154GlueMac::receiveSignal(cComponent *source, simsignal_t s
 
         if(newRadioReceptionState == IRadio::RECEPTION_STATE_RECEIVING)
         {
-            struct contiki_radio_state response;
-            response.State = (uint32_t)value;
-            SendRadioResponse(CONTIKI_RADIO_STATE_CHANGED, (uint64_t)round((simTime().dbl() * 1000000)),(uint8_t*)&response, sizeof(struct contiki_radio_state), 0);
+            struct lora_radio_status response;
+            response.RadioMode = (uint32_t)value;
+            response.ChannelIsFree = (radio->getReceptionState() == IRadio::RECEPTION_STATE_IDLE)?1:0;
+            SendRadioResponse(LORA_RADIO_STATE_CHANGED, (uint64_t)std::round((simTime().dbl() * 1000000)),(uint8_t*)&response, sizeof(struct lora_radio_status), 0);
 #ifdef LABSCIM_LOG_COMMANDS
             std::stringstream stream;
             stream << "RX is starting\n";

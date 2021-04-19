@@ -21,11 +21,11 @@
 import inet.linklayer.contract.IWirelessInterface;
 import inet.networklayer.common.InterfaceEntry;
 import inet.physicallayer.contract.packetlevel.IRadio;
-import labscim.linklayer.lora.LoRaMacNodeGlueMac;
+import labscim.linklayer.lora.PacketForwarderNodeGlueMac;
 package labscim.linklayer.lora;
 
 
-module LoRaMacInterface extends InterfaceEntry like IWirelessInterface
+module PacketForwarderInterface extends InterfaceEntry like IWirelessInterface
 {
     parameters:
         @class(inet::InterfaceEntry);
@@ -39,7 +39,7 @@ module LoRaMacInterface extends InterfaceEntry like IWirelessInterface
         output upperLayerOut;
         input radioIn @labels(ISignal);
     submodules:
-        mac: LoRaMacNodeGlueMac {
+        mac: PacketForwarderNodeGlueMac {
             parameters:
                 @display("p=100,100");
         }

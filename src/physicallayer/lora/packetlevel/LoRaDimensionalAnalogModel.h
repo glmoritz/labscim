@@ -18,7 +18,7 @@
 #ifndef __LABSCIM_LORADIMENSIONALANALOGMODEL_H
 #define __LABSCIM_LORADIMENSIONALANALOGMODEL_H
 
-#include "inet/physicallayer/base/packetlevel/DimensionalAnalogModelBase.h"
+#include "inet/physicallayer/analogmodel/packetlevel/DimensionalAnalogModel.h"
 
 using namespace inet::physicallayer;
 
@@ -26,7 +26,7 @@ namespace labscim {
 
 namespace physicallayer {
 
-class INET_API LoRaDimensionalAnalogModel : public DimensionalAnalogModelBase
+class INET_API LoRaDimensionalAnalogModel : public DimensionalAnalogModel
 {
   public:
     virtual std::ostream& printToStream(std::ostream& stream, int level) const override;

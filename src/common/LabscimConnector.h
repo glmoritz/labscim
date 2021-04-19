@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <omnetpp.h>
 #include <string>
 #include <list>
 
@@ -46,6 +47,10 @@ public:
     void SendRadioResponse(uint16_t RadioResponse, uint64_t CurrentTime, void* RadioStruct, size_t RadioStructLen, uint32_t SequenceNumber);
 
     void SendRegisterResponse(uint32_t SequenceNumber, uint64_t SignalID);
+
+    void SendRandomNumber(uint32_t SequenceNumber, union random_number Result);
+
+    void GenerateRandomNumber(omnetpp::cRNG *rng, uint8_t distribution_type, union random_number param_1, union random_number param_2,union random_number param_3, union random_number* result);
 
     int32_t WaitForCommand();
 

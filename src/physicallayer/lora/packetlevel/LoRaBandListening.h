@@ -13,8 +13,8 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 // 
 
-#ifndef LABSCIM_LORABANDLISTENING_H_
-#define LABSCIM_LORABANDLISTENING_H_
+#ifndef LABSCIM_RADIORECORDER_H_
+#define LABSCIM_RADIORECORDER_H_
 
 #include "inet/physicallayer/common/packetlevel/BandListening.h"
 
@@ -43,4 +43,4 @@ class INET_API LoRaBandListening : public BandListening
 
 } // namespace labscim
 
-#endif /* LABSCIM_LORABANDLISTENING_H_ */
+#endif /* LABSCIM_RADIORECORDER_H_ */

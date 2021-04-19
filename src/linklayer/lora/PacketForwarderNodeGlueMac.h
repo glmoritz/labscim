@@ -24,8 +24,8 @@
  * part of:    Modifications to the MF-2 framework by CSEM
  **************************************************************************/
 
-#ifndef __LABSCIM_LoRaMacNodeGlueMac_H
-#define __LABSCIM_LoRaMacNodeGlueMac_H
+#ifndef __LABSCIM_PacketForwarderNodeGlueMac_H
+#define __LABSCIM_PAcketForwarderNodeGlueMac_H
 
 #include "inet/queueing/contract/IPacketQueue.h"
 #include "inet/linklayer/base/MacProtocolBase.h"
@@ -54,10 +54,10 @@ namespace labscim {
  *
  * \image html csmaFSM.png "CSMA Mac-Layer - finite state machine"
  */
-class INET_API LoRaMacNodeGlueMac : public MacProtocolBase, public IMacProtocol, public LabscimConnector
+class INET_API PacketForwarderNodeGlueMac : public MacProtocolBase, public IMacProtocol, public LabscimConnector
 {
 public:
-    LoRaMacNodeGlueMac()
+    PacketForwarderNodeGlueMac()
 : MacProtocolBase()
 , LabscimConnector()
 , radio(nullptr)
@@ -74,7 +74,7 @@ public:
         mTransmissionState = IRadio::TRANSMISSION_STATE_UNDEFINED;
 }
 
-    virtual ~LoRaMacNodeGlueMac();
+    virtual ~PacketForwarderNodeGlueMac();
 
     /** @brief Initialization of the module and some variables*/
     virtual void initialize(int) override;
@@ -96,7 +96,6 @@ public:
 
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, double value, cObject *details) override;
 
-
 protected:
     std::string mNodeName;
 
@@ -114,23 +113,8 @@ protected:
         RX_TIMER
     };
 
-    enum mac_rx_states
-    {
-        RX_IDLE = 0,
-        RX_SINGLE_START,
-        RX_SINGLE_LISTENING,
-        RX_CONTINUOUS_START,
-        RX_CONTINUOUS_LISTENING,
-        RX_WINDOW_START,
-        RX_WINDOW_LISTENING,
-        RX_SLEEP_WINDOW
-    };
-    enum mac_rx_states mRX_fsm;
-    cMessage* mRXTimerMsg;
-    cMessage* mCurrentProcessingMsg;
-    uint64_t mRx_window_us;
-    uint64_t mSleep_window_us;
 
+    cMessage* mCurrentProcessingMsg;
     /*************************************************************/
     /****************** TYPES ************************************/
     /*************************************************************/
@@ -181,10 +165,10 @@ private:
 
     /** @brief Copy constructor is not allowed.
      */
-    LoRaMacNodeGlueMac(const LoRaMacNodeGlueMac&);
+    PacketForwarderNodeGlueMac(const PacketForwarderNodeGlueMac&);
     /** @brief Assignment operator is not allowed.
      */
-    LoRaMacNodeGlueMac& operator=(const LoRaMacNodeGlueMac&);
+    PacketForwarderNodeGlueMac& operator=(const PacketForwarderNodeGlueMac&);
 };
 
 } // namespace inet

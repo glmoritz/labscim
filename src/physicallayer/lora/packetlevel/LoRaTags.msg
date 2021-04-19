@@ -15,8 +15,8 @@ namespace inet;
 
 class LoRaParamsTagBase extends TagBase
 {
-    int LoRaSF = 6;
-    int LoRaCR = 1; //the fraction is 4 / (LoraCR + 4)
+    int LoRaSF = -1;
+    int LoRaCR = -1; //the fraction is 4 / (LoraCR + 4)    
 }
 
 class LoRaParamsInd extends LoRaParamsTagBase

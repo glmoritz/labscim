@@ -34,6 +34,14 @@ LoRaDimensionalTransmission::LoRaDimensionalTransmission(const IRadio *transmitt
 {
 }
 
+std::ostream& LoRaDimensionalTransmission::printToStream(std::ostream& stream, int level) const
+{
+    stream << "LoRaDimensionalTransmission";
+    if (level <= PRINT_LEVEL_DEBUG)
+        stream << ", LoRaSF = " << LoRaSF << ", LoRaCR = 4/" << LoRaCR+4 << ", ";
+    return DimensionalTransmission::printToStream(stream, level);
+}
+
 } // namespace physicallayer
 
 } // namespace labscim

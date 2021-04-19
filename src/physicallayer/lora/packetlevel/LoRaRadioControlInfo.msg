@@ -30,5 +30,10 @@ namespace inet::physicallayer;
 class ConfigureLoRaRadioCommand extends ConfigureRadioCommand
 {
     int LoRaSF = -1;                  // new lora radio SF or -1 if not set.
-    int LoRaCR = -1;                  // new lora radio CR or -1 if not set.    
+    int LoRaCR = -1;                  // new lora radio CR or -1 if not set.  
+    int CRC_enabled = -1;
+    int Header_enabled = -1;
+    int LowDataRate_optimization = -1;  
+    int Preamble_length = -1;
+    int Payload_length = -1;
 }

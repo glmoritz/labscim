@@ -30,7 +30,11 @@ import inet.physicallayer.base.packetlevel.DimensionalTransmitterBase;
 module LoRaDimensionalTransmitter extends DimensionalTransmitterBase
 {
     parameters:
+        int LoRaSF;
+        int LoRaCR;        
+        LoRaSF = default(7);
+        LoRaCR = default(1); //coding rate at 4 / (4+LoRaCR)
         modulation = default("DSSS-OQPSK-16");
-        @class(LoRaDimensionalTransmitter);
+        @class(labscim::physicallayer::LoRaDimensionalTransmitter);
 }
 

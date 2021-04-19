@@ -89,6 +89,8 @@
                         					
                     </folderInfo>
                     					
+                    <fileInfo id="org.omnetpp.cdt.gnu.config.debug.388545628.1768048337" name="LabscimRadioRecorder.h" rcbsApplicability="disable" resourcePath="src/physicallayer/LabscimRadioRecorder.h" toolsToInvoke=""/>
+                    					
                     <sourceEntries>
                         						
                         <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="simulations"/>

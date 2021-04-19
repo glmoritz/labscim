@@ -24,21 +24,20 @@ namespace physicallayer {
 
 
 
-LoRaDimensionalNoise::LoRaDimensionalNoise(simtime_t startTime, simtime_t endTime, Hz centerFrequency, Hz bandwidth, const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& BackgroundPower):
-    DimensionalNoise(startTime, endTime, centerFrequency, bandwidth, ComputeTotalNoise(LoRapower,NonLoRapower,BackgroundPower)),
+LoRaDimensionalNoise::LoRaDimensionalNoise(simtime_t startTime, simtime_t endTime, Hz centerFrequency, Hz bandwidth, const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& Backgroundpower):
+    DimensionalNoise(startTime, endTime, centerFrequency, bandwidth, ComputeTotalNoise(LoRapower,NonLoRapower,Backgroundpower)),
     LoRapower(LoRapower),
     NonLoRapower(NonLoRapower),
-    Backgroundpower(BackgroundPower)
+    Backgroundpower(Backgroundpower)
 {
 }
 
-const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& LoRaDimensionalNoise::ComputeTotalNoise(const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6>& LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& BackgroundPower)
+const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>> LoRaDimensionalNoise::ComputeTotalNoise(const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6>& LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& Backgroundpower)
 {
     std::vector<Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>> Powers(LoRapower.begin(), LoRapower.end());
     Powers.push_back(NonLoRapower);
-    Powers.push_back(BackgroundPower);
-    const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& ret = makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(Powers);
-    return ret;
+    Powers.push_back(Backgroundpower);
+    return makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(Powers);
 }
 
 std::ostream& LoRaDimensionalNoise::printToStream(std::ostream& stream, int level) const
