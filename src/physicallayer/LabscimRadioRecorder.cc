@@ -172,7 +172,7 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
 
                 if (packet->findTag<SignalPowerInd>() != nullptr) {
                     auto signalPowerInd = packet->getTag<SignalPowerInd>();
-                    power = math::mW2dBmW(signalPowerInd->getPower().get());
+                    power = math::mW2dBmW(signalPowerInd->getPower().get()*1000);
                 }
 
                 if (packet->findTag<SnirInd>() != nullptr)

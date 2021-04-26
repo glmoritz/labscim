@@ -165,7 +165,7 @@ double LoRaDimensionalSnir::getMeanLoRa(int LoRaSF) const
         if(dimensionalNoise)
         {
             auto noisePower = dimensionalNoise->getLoRapower(LoRaSF);
-            meanLoRaSNIR[LoRaSF-7] = retMax(noisePower->add(dimensionalNoise->getBackgroundpower()));
+            meanLoRaSNIR[LoRaSF-7] = retMean(noisePower->add(dimensionalNoise->getBackgroundpower()));
         }
     }
     return meanLoRaSNIR[LoRaSF-7];

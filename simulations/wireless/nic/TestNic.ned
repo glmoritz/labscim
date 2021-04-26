@@ -28,6 +28,7 @@ import inet.physicallayer.contract.packetlevel.IRadioMedium;
 import inet.visualizer.contract.IIntegratedVisualizer;
 import inet.node.inet.AdhocHost;
 import inet.node.inet.WirelessHost;
+import labscim.physicallayer.LabscimRadioRecorder;
 
 network TestNic
 {
@@ -67,6 +68,10 @@ network TestNic
                 @display("r=,,#707070;p=250,200");
         }
         wpanHost[numwpanHosts]: AdhocHost {
+            @display("r=,,#707070;p=250,200;i=misc/sensor2");            
+        }
+        
+        spectrumrecorder: LabscimRadioRecorder {
             @display("r=,,#707070;p=250,200;i=misc/sensor2");            
         }
         

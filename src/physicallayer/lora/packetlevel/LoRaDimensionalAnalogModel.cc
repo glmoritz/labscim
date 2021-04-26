@@ -136,10 +136,10 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
     auto loradimensionalNoise = dynamic_cast<const LoRaDimensionalNoise *>(noise);
     auto dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
     auto dimensionalNoise = check_and_cast<const DimensionalNoise *>(noise);
-    const auto& bandpassFilter = makeShared<Boxcar2DFunction<double, simsec, Hz>>(simsec(dimensionalReception->getStartTime()), simsec(dimensionalReception->getEndTime()),  dimensionalNoise->getCenterFrequency() - dimensionalNoise->getBandwidth()/2, dimensionalNoise->getCenterFrequency() + dimensionalNoise->getBandwidth()/2, 1);
+    //const auto& bandpassFilter = makeShared<Boxcar2DFunction<double, simsec, Hz>>(simsec(dimensionalReception->getStartTime()), simsec(dimensionalReception->getEndTime()),  dimensionalNoise->getCenterFrequency() - dimensionalNoise->getBandwidth()/2, dimensionalNoise->getCenterFrequency() + dimensionalNoise->getBandwidth()/2, 1);
 
 
-    const auto filtered_reception = loradimensionalReception->getPower()->multiply(bandpassFilter);
+    const auto filtered_reception = loradimensionalReception->getPower();//->multiply(bandpassFilter);
 
     //TODO: why is there no need to filter the noise?
     //const auto& bandpassFilter = makeShared<Boxcar2DFunction<double, simsec, Hz>>(simsec(reception->getStartTime()), simsec(reception->getEndTime()), dimensionalReception->getCenterFrequency() - dimensionalReception->getBandwidth() / 2, dimensionalReception->getCenterFrequency() + dimensionalReception->getBandwidth() / 2, 1);
