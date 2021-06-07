@@ -106,6 +106,7 @@ void PacketForwarderNodeGlueMac::initialize(int stage)
     else if (stage == INITSTAGE_NETWORK_CONFIGURATION)
     {
         double boot_time = par("BootTime").doubleValue();
+
         uint32_t ServerPort = par("NodeProcessConnectionPort").intValue();
         char msgname[64];
         cMessage* BootMsg;
@@ -113,6 +114,7 @@ void PacketForwarderNodeGlueMac::initialize(int stage)
         std::stringstream stream;
         stream << "gateway-node-" << std::hex << interfaceEntry->getMacAddress().getInt();
         mNodeName = std::string(stream.str() );
+        std::string MemoryName = std::string("labscim-") + mNodeName + std::string("-") + GenerateRandomString(16);
 
         nbBufferSize = par("SocketBufferSize").intValue();
         interfaceEntry->setDatarate(mLoRaRadio->getPacketDataRate().get());
@@ -124,15 +126,19 @@ void PacketForwarderNodeGlueMac::initialize(int stage)
 #endif
             cmd = cmd + std::string(par("NodeProcessCommand").stringValue()) + std::string(" -b") + std::to_string(par("SocketBufferSize").intValue());
             cmd = cmd + std::string(" -p") + std::to_string(par("NodeProcessConnectionPort").intValue());
-            cmd = cmd + std::string(" -n") + mNodeName + std::string(" -alocalhost");
+            cmd = cmd + std::string(" -n") + MemoryName + std::string(" -alocalhost");
             cmd = cmd + std::string(" ") + std::string(par("NodeExtraArguments").stringValue());
             cmd = cmd + std::string(" > /dev/null 2> /dev/null < /dev/null &");
             //cmd = cmd + std::string(" &");
         }
+        else
+        {
+            MemoryName = std::string("labscim-debug-") + mNodeName;
+        }
 
         //ssh guilherme@guilherme-ubuntu.local '/usr/bin/nohup /home/guilherme/contiki-ng/examples/hello-world/hello-world.labscim > /dev/null 2> /dev/null < /dev/null &'
 
-        SpawnProcess(cmd, mNodeName, ServerPort, nbBufferSize);
+        SpawnProcess(cmd, MemoryName, ServerPort, nbBufferSize);
 
         //SpawnProcess("::1", "/home/guilherme/contiking/examples/hello/hello","-b 512 -p 9608" , 9608, nbBufferSize);
         BootMsg = new cMessage((mNodeName + "-boot").c_str());
@@ -632,11 +638,11 @@ void PacketForwarderNodeGlueMac::handleSelfMessage(cMessage *msg)
     {
         struct lora_gateway_setup setup_msg;
         setup_msg.output_logs = par("OutputLogs").boolValue()?1:0;
-        setup_msg.IsMaster = par("IsMaster").boolValue()?1:0;
         //EV_DETAIL << "Boot Message." << endl;
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
         interfaceEntry->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
         setup_msg.startup_time = (uint64_t)(simTime().dbl() * 1000000);
+        setup_msg.labscim_log_master = par("IsMQTTLogger").boolValue()?1:0;
 #ifdef LABSCIM_LOG_COMMANDS
         std::stringstream stream;
         stream << "BOOT\n";

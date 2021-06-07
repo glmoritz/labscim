@@ -141,6 +141,8 @@ protected:
     std::vector<std::string> mRegisteredSignals;
     cProperty *statisticTemplate;
 
+    std::string mNodeName;
+
     int mCurrentMode; //the current radio mode (maybe redundant)
     Hz mCurrentCenterFrequency;
     Hz mCurrentBandwidth;

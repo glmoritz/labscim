@@ -37,20 +37,26 @@ void LabscimRadioRecorder::initialize(int stage)
 {
     if(stage == INITSTAGE_LOCAL)
     {
+        LogEnabled = par("EnableLog").boolValue();
         std::string name = par("LogName");
-        LogFile.open(name);
+
+        if(LogEnabled)
+        {
+            LogFile.open(name);
+        }
     }
     else if(stage == INITSTAGE_LAST)
     {
-        getSimulation()->getSystemModule()->subscribe(IRadio::radioModeChangedSignal, this);
-        getSimulation()->getSystemModule()->subscribe(IRadio::transmissionEndedSignal, this);
-        getSimulation()->getSystemModule()->subscribe(IRadio::receptionEndedSignal, this);
-        getSimulation()->getSystemModule()->subscribe(IRadio::receptionStateChangedSignal, this);
-        getSimulation()->getSystemModule()->subscribe(IRadio::transmissionStateChangedSignal, this);
-        getSimulation()->getSystemModule()->subscribe(IRadio::receptionStartedSignal, this);
-        getSimulation()->getSystemModule()->subscribe(packetSentToUpperSignal, this);
-
-
+        if(LogEnabled)
+        {
+            getSimulation()->getSystemModule()->subscribe(IRadio::radioModeChangedSignal, this);
+            getSimulation()->getSystemModule()->subscribe(IRadio::transmissionEndedSignal, this);
+            getSimulation()->getSystemModule()->subscribe(IRadio::receptionEndedSignal, this);
+            getSimulation()->getSystemModule()->subscribe(IRadio::receptionStateChangedSignal, this);
+            getSimulation()->getSystemModule()->subscribe(IRadio::transmissionStateChangedSignal, this);
+            getSimulation()->getSystemModule()->subscribe(IRadio::receptionStartedSignal, this);
+            getSimulation()->getSystemModule()->subscribe(packetSentToUpperSignal, this);
+        }
     }
 }
 
@@ -178,7 +184,7 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
                 if (packet->findTag<SnirInd>() != nullptr)
                 {
                     auto snir = packet->getTag<SnirInd>();
-                    double snr = math::mW2dBmW(snir->getAverageSnir());
+                    double snr = math::fraction2dB(snir->getAverageSnir());
                 }
                 LogFile << signalID << " ," << simTime().dbl() <<",packetSentToUpperSignal, " << source->getFullPath().c_str();
                 LogFile << "," << packet->getArrivalTime().dbl() << "," << frequency << "," << bandwidth << "," << power << "," << snr << "\n";

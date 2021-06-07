@@ -37,6 +37,7 @@ module PacketForwarderNodeGlueMac extends MacProtocolBase like IMacProtocol
 {
     parameters:
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
+        bool IsMQTTLogger = default(false); //the buffer size for socket connection with contiking instance
         
         volatile double BootTime @unit(s) = default(0); //time to boot up the node 
                 

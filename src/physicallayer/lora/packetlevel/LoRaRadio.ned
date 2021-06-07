@@ -27,6 +27,7 @@ module LoRaRadio extends FlatRadioBase
         int LoRaCR;
         bool iAmGateway;
         @signal[loraradio_datarate_changed](type=double);        
+        @statistic[meanSnirdB](title="Mean SNIR dB"; source=meanSnirdB(packetSentToUpper); record=histogram);
         
         string signalAnalogRepresentation @enum("scalar", "dimensional") = default("dimensional");
         transmitter.typename = default(signalAnalogRepresentation == "scalar" ? "Ieee802154ScalarTransmitter" : signalAnalogRepresentation == "dimensional" ? "LoRaDimensionalTransmitter" : "");

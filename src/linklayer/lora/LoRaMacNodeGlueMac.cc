@@ -65,6 +65,7 @@ Define_Module(LoRaMacNodeGlueMac);
 
 
 
+
 void LoRaMacNodeGlueMac::initialize(int stage)
 {
     MacProtocolBase::initialize(stage);
@@ -113,6 +114,8 @@ void LoRaMacNodeGlueMac::initialize(int stage)
         stream << "node-" << std::hex << interfaceEntry->getMacAddress().getInt();
         mNodeName = std::string(stream.str() );
 
+        std::string MemoryName = std::string("labscim-") + mNodeName + std::string("-") + GenerateRandomString(16);
+
         nbBufferSize = par("SocketBufferSize").intValue();
         interfaceEntry->setDatarate(mLoRaRadio->getPacketDataRate().get());
 
@@ -123,15 +126,19 @@ void LoRaMacNodeGlueMac::initialize(int stage)
 #endif
             cmd = cmd + std::string(par("NodeProcessCommand").stringValue()) + std::string(" -b") + std::to_string(par("SocketBufferSize").intValue());
             cmd = cmd + std::string(" -p") + std::to_string(par("NodeProcessConnectionPort").intValue());
-            cmd = cmd + std::string(" -n") + mNodeName + std::string(" -alocalhost");
+            cmd = cmd + std::string(" -n") + MemoryName + std::string(" -alocalhost");
             cmd = cmd + std::string(" ") + std::string(par("NodeExtraArguments").stringValue());
             cmd = cmd + std::string(" > /dev/null 2> /dev/null < /dev/null &");
             //cmd = cmd + std::string(" &");
         }
+        else
+        {
+            MemoryName = std::string("labscim-debug-") + mNodeName;
+        }
 
         //ssh guilherme@guilherme-ubuntu.local '/usr/bin/nohup /home/guilherme/contiki-ng/examples/hello-world/hello-world.labscim > /dev/null 2> /dev/null < /dev/null &'
 
-        SpawnProcess(cmd, mNodeName, ServerPort, nbBufferSize);
+        SpawnProcess(cmd, MemoryName, ServerPort, nbBufferSize);
 
         //SpawnProcess("::1", "/home/guilherme/contiking/examples/hello/hello","-b 512 -p 9608" , 9608, nbBufferSize);
         BootMsg = new cMessage((mNodeName + "-boot").c_str());
@@ -140,13 +147,6 @@ void LoRaMacNodeGlueMac::initialize(int stage)
 
         //create the RX timer msg
         mRXTimerMsg = new cMessage((mNodeName + "-rxtimer").c_str());
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
 
         mRXTimerMsg->setKind(RX_TIMER);
 
@@ -172,14 +172,6 @@ LoRaMacNodeGlueMac::~LoRaMacNodeGlueMac()
     }
     if(mRXTimerMsg!=nullptr)
     {
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
         cancelAndDelete(mRXTimerMsg);
     }
 }
@@ -422,14 +414,6 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
         struct lora_set_rx* srx = (struct lora_set_rx*)cmd->radio_struct;
         mRx_window_us=srx->Timeout_us;
         mSleep_window_us=0;
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
         cancelEvent(mRXTimerMsg);
 
         switch(srx->Timeout_us)
@@ -446,13 +430,6 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
             break;
         }
         }
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
         scheduleAt(simTime(), mRXTimerMsg);
         free(cmd);
         break;
@@ -462,24 +439,8 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
         struct lora_set_rx_dutycycle* srx = (struct lora_set_rx_dutycycle*)cmd->radio_struct;
         mRx_window_us=srx->Rx_window_us;
         mSleep_window_us=srx->Sleep_window_us;
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
         cancelEvent(mRXTimerMsg);
         mRX_fsm = RX_WINDOW_START;
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
         scheduleAt(simTime(), mRXTimerMsg);
         free(cmd);
         break;
@@ -488,15 +449,6 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
     {
         radio->setRadioMode(IRadio::RADIO_MODE_SLEEP);
         mRX_fsm = RX_IDLE;
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
-
         cancelEvent(mRXTimerMsg);
         free(cmd);
         break;
@@ -783,14 +735,6 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
             mRX_fsm = RX_SINGLE_LISTENING;
             if(mRx_window_us > 0)
             {
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
                 scheduleAt(simTime().dbl() + ((double)mRx_window_us)/1000, mRXTimerMsg);
             }
             break;
@@ -801,14 +745,6 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
             if(radio->getReceptionState()==IRadio::RECEPTION_STATE_RECEIVING)
             {
                 //reschedule timeout
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
                 scheduleAt(simTime().dbl() + ((double)mRx_window_us)/1000, mRXTimerMsg);
             }
             else
@@ -843,14 +779,6 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
         {
             radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
             mRX_fsm = RX_WINDOW_LISTENING;
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
             scheduleAt(simTime().dbl() + ((double)mRx_window_us)/1000, mRXTimerMsg);
             break;
         }
@@ -859,13 +787,6 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
             if(radio->getReceptionState()==IRadio::RECEPTION_STATE_RECEIVING)
             {
                 //reschedule
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
 
                 scheduleAt(simTime().dbl() + ((double)mRx_window_us)/1000, mRXTimerMsg);
             }
@@ -873,14 +794,6 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
             {
                 radio->setRadioMode(IRadio::RADIO_MODE_SLEEP);
                 mRX_fsm = RX_SLEEP_WINDOW;
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
                 scheduleAt(simTime().dbl() + ((double)mSleep_window_us)/1000, mRXTimerMsg);
             }
             break;
@@ -998,14 +911,6 @@ void LoRaMacNodeGlueMac::handleLowerPacket(Packet *packet)
     {
         radio->setRadioMode(IRadio::RADIO_MODE_SLEEP);
         mRX_fsm = RX_IDLE;
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
         cancelEvent(mRXTimerMsg);
         break;
     }
@@ -1063,14 +968,6 @@ void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID,
             response.ChannelIsFree = (radio->getReceptionState() == IRadio::RECEPTION_STATE_IDLE)?1:0;
             if(mRX_fsm==RX_WINDOW_LISTENING)
             {
-#ifdef LABSCIM_LOG_COMMANDS
-        {
-            char llog[256];
-            sprintf(llog,"mRXTimerMsg=0x%llx at line %d\n",mRXTimerMsg,__LINE__);
-            labscim_log(llog, "rxt ");
-        }
-#endif
-
                 cancelEvent(mRXTimerMsg);
                 scheduleAt(simTime().dbl() + ((double)(2*mRx_window_us+mSleep_window_us))/1000, mRXTimerMsg);
             }

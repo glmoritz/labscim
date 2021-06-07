@@ -32,6 +32,7 @@ namespace physicallayer {
 class LabscimRadioRecorder : public cSimpleModule, public cListener
 {
     private:
+        bool LogEnabled;
         ofstream LogFile;
 
     protected:

@@ -30,7 +30,7 @@ module PacketForwarderInterface extends InterfaceEntry like IWirelessInterface
     parameters:
         @class(inet::InterfaceEntry);
         string interfaceTableModule;
-        string energySourceModule = default("");
+        string energySourceModule = default("^.energyStorage");
         *.interfaceTableModule = default(absPath(interfaceTableModule));
         *.energySourceModule = default(absPath(energySourceModule));
         @display("i=block/ifcard");

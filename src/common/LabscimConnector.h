@@ -52,6 +52,8 @@ public:
 
     void GenerateRandomNumber(omnetpp::cRNG *rng, uint8_t distribution_type, union random_number param_1, union random_number param_2,union random_number param_3, union random_number* result);
 
+    static string GenerateRandomString(const int len);
+
     int32_t WaitForCommand();
 
 private:

@@ -103,7 +103,6 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
     }
     else if (stage == INITSTAGE_NETWORK_CONFIGURATION)
     {
-        char nodename[11];
         double boot_time = par("BootTime").doubleValue();
         uint32_t ServerPort = par("NodeProcessConnectionPort").intValue();
         char msgname[64];
@@ -111,11 +110,9 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
         std::string cmd("");
         std::stringstream stream;
         stream << "node-" << std::hex << interfaceEntry->getMacAddress().getInt();
-        std::string result( stream.str() );
+        mNodeName = std::string(stream.str() );
+        std::string MemoryName = std::string("labscim-") + mNodeName + std::string("-") + GenerateRandomString(16);
 
-
-
-        nodename[10]=0;
         nbBufferSize = par("SocketBufferSize").intValue();
 
         if(!par("NodeDebug").boolValue())
@@ -125,19 +122,20 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
 #endif
             cmd = cmd + std::string(par("NodeProcessCommand").stringValue()) + std::string(" -b") + std::to_string(par("SocketBufferSize").intValue());
             cmd = cmd + std::string(" -p") + std::to_string(par("NodeProcessConnectionPort").intValue());
-            cmd = cmd + std::string(" -n") + result + std::string(" -alocalhost");
+            cmd = cmd + std::string(" -n") + MemoryName + std::string(" -alocalhost");
             cmd = cmd + std::string(" ") + std::string(par("NodeExtraArguments").stringValue());
             cmd = cmd + std::string(" > /dev/null 2> /dev/null < /dev/null &");
             //cmd = cmd + std::string(" &");
         }
+        else
+        {
+            MemoryName = std::string("labscim-debug-") + mNodeName;
+        }
 
         //ssh guilherme@guilherme-ubuntu.local '/usr/bin/nohup /home/guilherme/contiki-ng/examples/hello-world/hello-world.labscim > /dev/null 2> /dev/null < /dev/null &'
 
-        SpawnProcess(cmd, result, ServerPort, nbBufferSize);
-
-        //SpawnProcess("::1", "/home/guilherme/contiking/examples/hello/hello","-b 512 -p 9608" , 9608, nbBufferSize);
-        sprintf(msgname, "node-boot-%s", stream.str());
-        BootMsg = new cMessage(msgname);
+        SpawnProcess(cmd, MemoryName, ServerPort, nbBufferSize);
+        BootMsg = new cMessage((mNodeName + "-boot").c_str());
         BootMsg->setKind(BOOT_MSG);
         scheduleAt(boot_time, BootMsg);
     }
@@ -251,6 +249,7 @@ void ContikiNGIeee802154GlueMac::configureRadio(Hz CenterFrequency, Hz Bandwidth
         Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
         EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
+        radio->setRadioMode(IRadio::RADIO_MODE_SLEEP);
 
         configureCommand->setPower(Power);
         configureCommand->setBitrate(Bitrate);
@@ -341,11 +340,9 @@ void ContikiNGIeee802154GlueMac::PerformRadioCommand(struct labscim_radio_comman
     {
         if(mCCATimerMsg == nullptr)
         {
-            char msgname[20];
             cMessage* CCAMsg;
             double us = simTime().dbl() * 1000000;
-            sprintf(msgname, "perform-cca-%d", getIndex());
-            CCAMsg = new cMessage(msgname);
+            CCAMsg = new cMessage((mNodeName + "-cca").c_str());
             CCAMsg->setKind(CCA_ENDED);
             CCAMsg->setContextPointer((void*)cmd);
             mCCATimerMsg = CCAMsg;
@@ -460,12 +457,10 @@ void ContikiNGIeee802154GlueMac::ProcessCommands()
                 }
                 case LABSCIM_SET_TIME_EVENT:
                 {
-                    char msgname[32];
                     struct labscim_set_time_event* ste = (struct labscim_set_time_event*)cmd;
                     cMessage* TimeEventMsg;
                     double us = simTime().dbl() * 1000000;
-                    sprintf(msgname, "node-timer-%d", getIndex());
-                    TimeEventMsg = new cMessage(msgname);
+                    TimeEventMsg = new cMessage((mNodeName + "-timer").c_str());
                     TimeEventMsg->setKind(CONTIKI_TIMER_MSG);
                     TimeEventMsg->setContextPointer((void*)ste);
                     if(ste->is_relative)
@@ -698,7 +693,7 @@ void ContikiNGIeee802154GlueMac::handleLowerPacket(Packet *packet)
 
     if (packet->findTag<SnirInd>() != nullptr) {
         auto snir = packet->getTag<SnirInd>();
-        double snir_dbm = math::mW2dBmW(snir->getAverageSnir());
+        double snir_dbm = math::fraction2dB(snir->getAverageSnir());
 
 //      802.15.4g - sec 10.2.6
 //        The LQI measurement is a characterization of the strength and/or quality of a received packet. The
@@ -711,11 +706,11 @@ void ContikiNGIeee802154GlueMac::handleLowerPacket(Packet *packet)
 //        least eight unique values of LQI shall be used.
 
         //0dbm is maximum LQI, -90dbm minimum
-        if(snir_dbm < -90.0)
+        if(snir_dbm < 0)
         {
-            snir_dbm=-90.0;
+            snir_dbm=0;
         }
-        payload->LQI = (uint32_t)round(((snir_dbm+90.0)*255.0)/90.0);
+        payload->LQI = (uint32_t)round(((snir_dbm)*255.0)/35.0);
         if(payload->LQI > 255)
         {
             payload->LQI = 255;

@@ -24,6 +24,8 @@
 #include "LoRaDimensionalSnir.h"
 #include "LoRaTags_m.h"
 
+#include <fstream>
+
 
 #include "inet/physicallayer/common/packetlevel/ReceptionDecision.h"
 #include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
@@ -126,8 +128,18 @@ bool LoRaDimensionalReceiver::computeIsReceptionPossible(const IListening *liste
     //here we can check compatibility of LoRaTx parameters (or being a gateway)
     const LoRaDimensionalTransmission *loRaTransmission = dynamic_cast<const LoRaDimensionalTransmission *>(transmission);
     const LoRaBandListening* loRaListening = dynamic_cast<const LoRaBandListening *>(listening);
+    bool GatewayRxPossible = false;
 
-    return loRaTransmission && loRaListening && (iAmGateway || (loRaListening->getCenterFrequency() == loRaTransmission->getCenterFrequency() && loRaListening->getBandwidth() == loRaTransmission->getBandwidth() && loRaListening->getLoRaSF() == loRaTransmission->getLoRaSF()));
+    if(iAmGateway)
+    {
+        Hz GWminFreq = loRaListening->getCenterFrequency() - loRaListening->getBandwidth()/2;
+        Hz GWmaxFreq = loRaListening->getCenterFrequency() + loRaListening->getBandwidth()/2;
+        Hz TxminFreq = loRaTransmission->getBandwidth() - loRaTransmission->getBandwidth()/2;
+        Hz TxMaxFreq = loRaTransmission->getBandwidth() + loRaTransmission->getBandwidth()/2;
+        GatewayRxPossible = (GWminFreq <= TxminFreq) && (GWmaxFreq >= TxMaxFreq);
+    }
+
+    return loRaTransmission && loRaListening && (GatewayRxPossible || (loRaListening->getCenterFrequency() == loRaTransmission->getCenterFrequency() && loRaListening->getBandwidth() == loRaTransmission->getBandwidth() && loRaListening->getLoRaSF() == loRaTransmission->getLoRaSF()));
 }
 
 // TODO: this is not purely functional, see interface comment
@@ -146,11 +158,25 @@ bool LoRaDimensionalReceiver::computeIsReceptionPossible(const IListening *liste
         }
         else
         {
-            W minReceptionPower = loRaReception->computeMinPower(reception->getStartTime(part), reception->getEndTime(part));
-            W sensitivity = getSensitivity(loRaReception);
-            bool isReceptionPossible = minReceptionPower >= sensitivity;
-            EV_DEBUG << "Computing whether reception is possible: minimum reception power = " << minReceptionPower << ", sensitivity = " << sensitivity << " -> reception is " << (isReceptionPossible ? "possible" : "impossible") << endl;
-            return isReceptionPossible;
+            bool GatewayRxPossible = false;
+            Hz GWminFreq = loRaListening->getCenterFrequency() - loRaListening->getBandwidth()/2;
+            Hz GWmaxFreq = loRaListening->getCenterFrequency() + loRaListening->getBandwidth()/2;
+            Hz TxminFreq = loRaReception->getCenterFrequency() - loRaReception->getBandwidth()/2;
+            Hz TxMaxFreq = loRaReception->getCenterFrequency() + loRaReception->getBandwidth()/2;
+            GatewayRxPossible = (GWminFreq <= TxminFreq) && (GWmaxFreq >= TxMaxFreq);
+
+            if(GatewayRxPossible)
+            {
+                W minReceptionPower = loRaReception->computeMinPower(reception->getStartTime(part), reception->getEndTime(part));
+                W sensitivity = getSensitivity(loRaReception);
+                bool isReceptionPossible = minReceptionPower >= sensitivity;
+                EV_DEBUG << "Computing whether reception is possible: minimum reception power = " << minReceptionPower << ", sensitivity = " << sensitivity << " -> reception is " << (isReceptionPossible ? "possible" : "impossible") << endl;
+                return isReceptionPossible;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
     else
@@ -192,7 +218,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
         {
             if( W(loradimensionalsnir->getMinLoRa(LoRaSF)) < W(math::dBmW2mW(nonOrthDelta[loradimensionalReception->getLoRaSF()-7][LoRaSF-7])) )
             {
-                EV_DEBUG << "Reception is not successfull: Strong interference from SF " << LoRaSF;
+                EV_DEBUG << "Reception is not successful: Strong interference from SF " << LoRaSF;
                 return false;
             }
         }
@@ -200,7 +226,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
         {
             if( W(loradimensionalsnir->getMeanLoRa(LoRaSF)) < W(math::dBmW2mW(nonOrthDelta[loradimensionalReception->getLoRaSF()-7][LoRaSF-7])) )
             {
-                EV_DEBUG << "Reception is not successfull: Strong interference from SF " << LoRaSF;
+                EV_DEBUG << "Reception is not successful: Strong interference from SF " << LoRaSF;
                 return false;
             }
         }
@@ -234,7 +260,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
     {
         if( W(loradimensionalsnir->getMinNonLoRa()) < snirNonLoRaThreshold )
         {
-            EV_DEBUG << "Reception is not successfull: Strong interference from non lora interferers ";
+            EV_DEBUG << "Reception is not successful: Strong interference from non lora interferers ";
             return false;
         }
     }
@@ -242,7 +268,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
     {
         if( W(loradimensionalsnir->getMeanNonLoRa()) <  snirNonLoRaThreshold )
         {
-            EV_DEBUG << "Reception is not successfull: Strong interference from non lora interferers ";
+            EV_DEBUG << "Reception is not successful: Strong interference from non lora interferers ";
             return false;
         }
     }
@@ -282,7 +308,17 @@ const IReceptionDecision *LoRaDimensionalReceiver::computeReceptionDecision(cons
 {
     const BandListening *bandListening = check_and_cast<const BandListening *>(listening);
     const NarrowbandReceptionBase *narrowbandReception = check_and_cast<const NarrowbandReceptionBase *>(reception);
-    if (iAmGateway || ((bandListening->getCenterFrequency() == narrowbandReception->getCenterFrequency() && bandListening->getBandwidth() == narrowbandReception->getBandwidth())))
+    bool GatewayRxPossible = false;
+    if(iAmGateway)
+    {
+        Hz GWminFreq = bandListening->getCenterFrequency() - bandListening->getBandwidth()/2;
+        Hz GWmaxFreq = bandListening->getCenterFrequency() + bandListening->getBandwidth()/2;
+        Hz TxminFreq = narrowbandReception->getCenterFrequency() - narrowbandReception->getBandwidth()/2;
+        Hz TxMaxFreq = narrowbandReception->getCenterFrequency() + narrowbandReception->getBandwidth()/2;
+        GatewayRxPossible = (GWminFreq <= TxminFreq) && (GWmaxFreq >= TxMaxFreq);
+    }
+
+    if (GatewayRxPossible || ((bandListening->getCenterFrequency() == narrowbandReception->getCenterFrequency() && bandListening->getBandwidth() == narrowbandReception->getBandwidth())))
     {
         auto isReceptionPossible = computeIsReceptionPossible(listening, reception, part);
         auto isReceptionAttempted = isReceptionPossible && computeIsReceptionAttempted(listening, reception, part, interference);

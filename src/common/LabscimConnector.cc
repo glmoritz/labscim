@@ -64,6 +64,24 @@ LabscimConnector::~LabscimConnector()
     delete mNodeOutputBuffer;
 }
 
+string LabscimConnector::GenerateRandomString(const int len)
+{
+    string tmp_s;
+    static const char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    //srand( (unsigned) time(NULL) * getpid());
+
+    tmp_s.reserve(len);
+
+    for (int i = 0; i < len; ++i)
+    {
+        tmp_s += alphanum[(rand()>>24) % (sizeof(alphanum) - 1)];
+    }
+    return tmp_s;
+}
+
+
+
 int32_t LabscimConnector::SpawnProcess(std::string processcommand, std::string node_name, uint32_t serverport, uint32_t BufferSize)
 {
 #ifndef LABSCIM_REMOTE_SOCKET //shared memory communication

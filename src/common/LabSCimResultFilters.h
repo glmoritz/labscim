@@ -1,6 +1,5 @@
 //
-// Copyright (C) 2014 Florian Meier
-// Copyright (C) 2013 OpenSim Ltd.
+// Copyright (C) 2011 Zoltan Bojthe
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public License
@@ -16,13 +15,34 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-package labscim.physicallayer;
+#ifndef __LABSCIM_RESULTFILTERS_H
+#define __LABSCIM_RESULTFILTERS_H
 
-module LabscimRadioRecorder 
+#include "inet/common/INETDefs.h"
+
+using namespace inet;
+using namespace inet::utils::filters;
+
+namespace labscim {
+
+namespace utils {
+
+namespace filters {
+
+/**
+ * Filter that expects a Packet and outputs its MeanSNR in dB from snirIndication tag if exists .
+ */
+class INET_API MeanSnirFromSnirIndFilter : public cObjectResultFilter
 {
-    parameters:
-        string LogName = default("spectrumlog.txt");
-        bool EnableLog = default(false);
-        @class(labscim::physicallayer::LabscimRadioRecorder);
-}
+  public:
+    virtual void receiveSignal(cResultFilter *prev, simtime_t_cref t, cObject *object, cObject *details) override;
+};
+
+} // namespace filters
+
+} // namespace utils
+
+} // namespace labscim
+
+#endif // ifndef __LABSCIM_RESULTFILTERS_H
 
