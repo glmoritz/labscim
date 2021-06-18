@@ -38,6 +38,8 @@ module PacketForwarderNodeGlueMac extends MacProtocolBase like IMacProtocol
     parameters:
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
         bool IsMQTTLogger = default(false); //the buffer size for socket connection with contiking instance
+        string MQTTLoggerIPAddress = default("localhost"); // address of the mqtt broker used by app server
+        string MQTTLoggerApplicationTopic = default("application/1/device/#"); // mqtt topic used by the lora application
         
         volatile double BootTime @unit(s) = default(0); //time to boot up the node 
                 

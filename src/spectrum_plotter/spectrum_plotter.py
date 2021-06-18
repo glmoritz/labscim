@@ -232,8 +232,8 @@ for n in nodes.items():
     pc = PatchCollection(n[1].tx_transmitting_patches, facecolor=color, alpha=0.7, edgecolor='None')
     ax[1].add_collection(pc)
 
-#pc = PatchCollection(specgram.rx_patches, facecolor='None', alpha=1, edgecolor='k')
-#ax[0].add_collection(pc)
+pc = PatchCollection(specgram.rx_patches, facecolor='None', alpha=1, edgecolor='k')
+ax[0].add_collection(pc)
 ax[0].set(xlim=(0, max_t), ylim=(specgram.min, specgram.max))
 
 pc = PatchCollection(specgram.tx_patches, facecolor='r', alpha=0.5, edgecolor='None')

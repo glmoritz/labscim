@@ -643,6 +643,9 @@ void PacketForwarderNodeGlueMac::handleSelfMessage(cMessage *msg)
         interfaceEntry->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
         setup_msg.startup_time = (uint64_t)(simTime().dbl() * 1000000);
         setup_msg.labscim_log_master = par("IsMQTTLogger").boolValue()?1:0;
+        strcpy((char*)setup_msg.MQTTLoggerAddress, par("MQTTLoggerIPAddress").stringValue());
+        strcpy((char*)setup_msg.MQTTLoggerApplicationTopic, par("MQTTLoggerApplicationTopic").stringValue());
+
 #ifdef LABSCIM_LOG_COMMANDS
         std::stringstream stream;
         stream << "BOOT\n";
