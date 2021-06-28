@@ -1,4 +1,5 @@
 # Import the necessary packages and modules
+from os import minor
 import sys
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
@@ -234,7 +235,21 @@ for n in nodes.items():
 
 pc = PatchCollection(specgram.rx_patches, facecolor='None', alpha=1, edgecolor='k')
 ax[0].add_collection(pc)
-ax[0].set(xlim=(0, max_t), ylim=(specgram.min, specgram.max))
+#ax[0].set(xlim=(0, max_t), ylim=(specgram.min, specgram.max))
+
+
+#ticks for AU915
+ax[0].set(xlim=(0, max_t), ylim=(915.1e6, 927.9e6))
+#ytm = np.linspace(915.1e6, 927.9e6, 65)
+ytm = np.linspace(915.1e6, 922.9e6, 40)
+#ytmajor = np.linspace(915.1e6,927.9e6, 9)
+ytmajor = np.linspace(915.1e6,921.5e6, 5)
+ytm2 = np.linspace(923e6, 927.8e6, 9)
+ax[0].set_yticks(ytm, minor=True)
+ax[0].set_yticks( np.concatenate([ytmajor,ytm2]))
+ax[0].grid(which='major', color='#666666', linestyle='-')
+ax[0].grid(which='minor', color='#333333', linestyle='--')
+
 
 pc = PatchCollection(specgram.tx_patches, facecolor='r', alpha=0.5, edgecolor='None')
 # Add collection to axes
@@ -246,16 +261,22 @@ ax[0].add_collection(pc)
 
 
 
+
+
 patch_width = next(iter(nodes.items()))[1].patch_width
 patch_margin = next(iter(nodes.items()))[1].patch_margin
 
 
-ax[0].set(xlim=(0, max_t), ylim=(specgram.min, specgram.max))
+#ax[0].set(xlim=(0, max_t), ylim=(specgram.min, specgram.max))
 ax[1].set(xlim=(0, max_t), ylim=(0, len(nodes)*(patch_margin+patch_width)))
 
 a = (patch_margin+patch_width)*np.array([x for x in range(len(nodes))])+((patch_margin+patch_width)/2)
 ax[1].set_yticks(a.tolist())     
 ax[1].set_yticklabels(nodes.keys())
+ax[1].set_xlabel("t (s)")
+ax[0].set_xlabel("t (s)")
+ax[0].set_ylabel("f (Hz)")
+
 
 
 # Add a legend
