@@ -8,10 +8,10 @@ def execute(sql):
         # connect to the PostgreSQL server
         print('Connecting to the PostgreSQL database...')        
         conn = psycopg2.connect(
-            host="192.168.100.105",
+            host="localhost",
             database="chirpstack_ns",
             user="chirpstack_ns",
-            password="cabecadeprego")
+            password="labsclabsc")
 		
         # create a cursor
         cur = conn.cursor()
