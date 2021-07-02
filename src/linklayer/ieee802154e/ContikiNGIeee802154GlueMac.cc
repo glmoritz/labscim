@@ -453,6 +453,7 @@ void ContikiNGIeee802154GlueMac::ProcessCommands()
                     EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
                     YieldReceived = 1;
+                    free(cmd);
                     break;
                 }
                 case LABSCIM_SET_TIME_EVENT:
@@ -483,6 +484,7 @@ void ContikiNGIeee802154GlueMac::ProcessCommands()
                         }
                         else
                         {
+                            free(cmd);
                             delete TimeEventMsg;
                         }
                     }
@@ -591,6 +593,8 @@ void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
     {
         struct contiki_node_setup setup_msg;
         setup_msg.output_logs = (uint8_t)par("OutputLogs").boolValue();
+        setup_msg.tsch_coordinator = (uint8_t)par("TSCHCoordinator").boolValue()?1:0;
+
         //EV_DETAIL << "Boot Message." << endl;
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
         interfaceEntry->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));

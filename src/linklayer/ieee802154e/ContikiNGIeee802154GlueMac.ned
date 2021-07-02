@@ -49,6 +49,7 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
 		string NodeExtraArguments = default(""); // Extra arguments for the node
 		bool NodeDebug = default(false); // Command to be executed in the remote host to spawn the upper layer process
 		bool OutputLogs = default(false); // If true, contiki will write its printfs to a file
+		bool TSCHCoordinator = default(false); // If true, contiki node will be a TSCH coordinator
 		int NodeProcessConnectionPort = default(9608);//The default TCP port that will be used for connection                                          
                                           
         // length of MAC header

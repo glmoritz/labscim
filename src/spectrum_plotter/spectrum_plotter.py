@@ -7,6 +7,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.patches import Circle
 import numpy as np
 import enum
+import matplotlib.ticker as ticker
 
 class RadioMode(enum.Enum):        
     RADIO_MODE_OFF=0        
@@ -238,6 +239,26 @@ ax[0].add_collection(pc)
 #ax[0].set(xlim=(0, max_t), ylim=(specgram.min, specgram.max))
 
 
+scale_y = 1e6
+ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_y))
+ax[0].yaxis.set_major_formatter(ticks_y)
+
+
+
+ytm = np.linspace(915.1e6, 922.9e6, 40)
+#ytmajor = np.linspace(915.1e6,927.9e6, 9)
+ytmajor = np.linspace(915.1e6,921.5e6, 5)
+ytm2 = np.linspace(923e6, 927.8e6, 9)
+ax[0].set_yticks(ytm, minor=True)
+ax[0].set_yticks( np.concatenate([ytmajor,ytm2]))
+ax[0].grid(which='major', color='#666666', linestyle='-')
+ax[0].grid(which='minor', color='#333333', linestyle='--')
+
+
+
+
+
+
 #ticks for AU915
 ax[0].set(xlim=(0, max_t), ylim=(915.1e6, 927.9e6))
 #ytm = np.linspace(915.1e6, 927.9e6, 65)
@@ -275,7 +296,7 @@ ax[1].set_yticks(a.tolist())
 ax[1].set_yticklabels(nodes.keys())
 ax[1].set_xlabel("t (s)")
 ax[0].set_xlabel("t (s)")
-ax[0].set_ylabel("f (Hz)")
+ax[0].set_ylabel("f (MHz)")
 
 
 

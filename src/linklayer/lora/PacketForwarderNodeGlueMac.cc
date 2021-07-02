@@ -492,6 +492,7 @@ void PacketForwarderNodeGlueMac::ProcessCommands()
                     EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
                     YieldReceived = 1;
+                    free(cmd);
                     break;
                 }
                 case LABSCIM_SET_TIME_EVENT:
@@ -522,6 +523,7 @@ void PacketForwarderNodeGlueMac::ProcessCommands()
                         }
                         else
                         {
+                            free(cmd);
                             delete TimeEventMsg;
                         }
                     }
@@ -550,7 +552,7 @@ void PacketForwarderNodeGlueMac::ProcessCommands()
                     EV_LOG((omnetpp::LogLevel)pm->message_type, nullptr) << pm->message;
                     std::stringstream stream;
                     stream << pm->message;
-                    EV_DEBUG << (uint8_t*)stream.str().c_str();
+                    //EV_DEBUG << (uint8_t*)stream.str().c_str();
 #ifdef LABSCIM_LOG_COMMANDS
                     sprintf(log,"seq%4d\tPRINT_MESSAGE\n",hdr->sequence_number);
                     Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
@@ -594,6 +596,7 @@ void PacketForwarderNodeGlueMac::ProcessCommands()
                     union random_number resp;
                     GenerateRandomNumber(getRNG(0), get_random->distribution_type, get_random->param_1, get_random->param_2, get_random->param_3, &resp);
                     SendRandomNumber(get_random->hdr.sequence_number,resp);
+                    free(cmd);
                 }
                 default:
                 {

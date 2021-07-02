@@ -47,87 +47,99 @@ std::ostream& LoRaDimensionalAnalogModel::printToStream(std::ostream& stream, in
 
 const IReception *LoRaDimensionalAnalogModel::computeReception(const IRadio *receiverRadio, const ITransmission *transmission, const IArrival *arrival) const
 {
-    const LoRaDimensionalTransmission *loRaTransmission = check_and_cast<const LoRaDimensionalTransmission *>(transmission);
-    const simtime_t receptionStartTime = arrival->getStartTime();
-    const simtime_t receptionEndTime = arrival->getEndTime();
-    const Coord receptionStartPosition = arrival->getStartPosition();
-    const Coord receptionEndPosition = arrival->getEndPosition();
-    const Quaternion receptionStartOrientation = arrival->getStartOrientation();
-    const Quaternion receptionEndOrientation = arrival->getEndOrientation();
-    const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& receptionPower = computeReceptionPower(receiverRadio, transmission, arrival);
-    int LoRaSF = loRaTransmission->getLoRaSF();
-    int LoRaCR = loRaTransmission->getLoRaCR();
-    return new LoRaDimensionalReception(receiverRadio, transmission, receptionStartTime, receptionEndTime, receptionStartPosition, receptionEndPosition, receptionStartOrientation, receptionEndOrientation, loRaTransmission->getCenterFrequency(), loRaTransmission->getBandwidth(), receptionPower,LoRaSF,LoRaCR);
+    const LoRaDimensionalTransmission *loRaTransmission = dynamic_cast<const LoRaDimensionalTransmission *>(transmission);
+    if(loRaTransmission)
+    {
+        const simtime_t receptionStartTime = arrival->getStartTime();
+        const simtime_t receptionEndTime = arrival->getEndTime();
+        const Coord receptionStartPosition = arrival->getStartPosition();
+        const Coord receptionEndPosition = arrival->getEndPosition();
+        const Quaternion receptionStartOrientation = arrival->getStartOrientation();
+        const Quaternion receptionEndOrientation = arrival->getEndOrientation();
+        const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& receptionPower = computeReceptionPower(receiverRadio, transmission, arrival);
+        int LoRaSF = loRaTransmission->getLoRaSF();
+        int LoRaCR = loRaTransmission->getLoRaCR();
+        return new LoRaDimensionalReception(receiverRadio, transmission, receptionStartTime, receptionEndTime, receptionStartPosition, receptionEndPosition, receptionStartOrientation, receptionEndOrientation, loRaTransmission->getCenterFrequency(), loRaTransmission->getBandwidth(), receptionPower,LoRaSF,LoRaCR);
+    }
+    else
+    {
+        return DimensionalAnalogModel::computeReception(receiverRadio, transmission, arrival);
+    }
 }
 
 
 const INoise *LoRaDimensionalAnalogModel::computeNoise(const IListening *listening, const IInterference *interference) const
 {
-    const LoRaBandListening *bandListening = check_and_cast<const LoRaBandListening *>(listening);
-    Hz centerFrequency = bandListening->getCenterFrequency();
-    Hz bandwidth = bandListening->getBandwidth();
+    const LoRaBandListening *bandListening = dynamic_cast<const LoRaBandListening *>(listening);
+    if(bandListening!=nullptr)
+    {
+        Hz centerFrequency = bandListening->getCenterFrequency();
+        Hz bandwidth = bandListening->getBandwidth();
 
-    std::array<std::vector<Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>>,6> LoRaReceptionPowers;
-    std::vector<Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>> OtherReceptionPowers;
+        std::array<std::vector<Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>>,6> LoRaReceptionPowers;
+        std::vector<Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>> OtherReceptionPowers;
 
-    const DimensionalNoise *dimensionalBackgroundNoise = check_and_cast_nullable<const DimensionalNoise *>(interference->getBackgroundNoise());
-    //if (dimensionalBackgroundNoise) {
-    //    //add background noise for all kinds of interference
-    //    const auto& backgroundNoisePower = dimensionalBackgroundNoise->getPower();
-    //    LoRaIntraSFReceptionPowers.push_back(backgroundNoisePower);
-    //    LoRaInterSFReceptionPowers.push_back(backgroundNoisePower);
-    //    OtherReceptionPowers.push_back(backgroundNoisePower);
-    //}
-    const std::vector<const IReception *> *interferingReceptions = interference->getInterferingReceptions();
-    for (const auto & interferingReception : *interferingReceptions) {
-        const LoRaDimensionalReception *loradimensionalReception = dynamic_cast<const LoRaDimensionalReception *>(interferingReception);
-        if(loradimensionalReception)
-        {
-            //check whether the transmissions are orthogonal
-            //Hz signalCarrierFrequency = loradimensionalReception->getCenterFrequency();
-            //Hz signalBandwidth = loradimensionalReception->getBandwidth();
-            //Hz interferenceChirpRate = signalBandwidth / pow(2,loradimensionalReception->getLoRaSF());
-            int EquivalentLoRaSF = loradimensionalReception->getLoRaSF() - (int)log2( loradimensionalReception->getBandwidth().get() / bandwidth.get() );
-            auto receptionPower = loradimensionalReception->getPower();
-            //intraSF interference
-            if((EquivalentLoRaSF >= 7)&&(EquivalentLoRaSF <= 12))
+        const DimensionalNoise *dimensionalBackgroundNoise = check_and_cast_nullable<const DimensionalNoise *>(interference->getBackgroundNoise());
+        //if (dimensionalBackgroundNoise) {
+        //    //add background noise for all kinds of interference
+        //    const auto& backgroundNoisePower = dimensionalBackgroundNoise->getPower();
+        //    LoRaIntraSFReceptionPowers.push_back(backgroundNoisePower);
+        //    LoRaInterSFReceptionPowers.push_back(backgroundNoisePower);
+        //    OtherReceptionPowers.push_back(backgroundNoisePower);
+        //}
+        const std::vector<const IReception *> *interferingReceptions = interference->getInterferingReceptions();
+        for (const auto & interferingReception : *interferingReceptions) {
+            const LoRaDimensionalReception *loradimensionalReception = dynamic_cast<const LoRaDimensionalReception *>(interferingReception);
+            if(loradimensionalReception)
             {
+                //check whether the transmissions are orthogonal
+                //Hz signalCarrierFrequency = loradimensionalReception->getCenterFrequency();
+                //Hz signalBandwidth = loradimensionalReception->getBandwidth();
+                //Hz interferenceChirpRate = signalBandwidth / pow(2,loradimensionalReception->getLoRaSF());
+                int EquivalentLoRaSF = loradimensionalReception->getLoRaSF() - (int)log2( loradimensionalReception->getBandwidth().get() / bandwidth.get() );
+                auto receptionPower = loradimensionalReception->getPower();
+                //intraSF interference
+                if((EquivalentLoRaSF >= 7)&&(EquivalentLoRaSF <= 12))
+                {
 
-                LoRaReceptionPowers[EquivalentLoRaSF - 7].push_back(receptionPower);
-                EV_TRACE << "LoRa Interference power begin " << endl;
+                    LoRaReceptionPowers[EquivalentLoRaSF - 7].push_back(receptionPower);
+                    EV_TRACE << "LoRa Interference power begin " << endl;
+                    EV_TRACE << *receptionPower << endl;
+                    EV_TRACE << "LoRa Interference power end" << endl;
+                }
+            }
+            else
+            {
+                const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(interferingReception);
+                auto receptionPower = dimensionalReception->getPower();
+                OtherReceptionPowers.push_back(receptionPower);
+                EV_TRACE << "NonLoRa Interference power begin " << endl;
                 EV_TRACE << *receptionPower << endl;
-                EV_TRACE << "LoRa Interference power end" << endl;
+                EV_TRACE << "NonLoRaInterference power end" << endl;
             }
         }
-        else
-        {
-            const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(interferingReception);
-            auto receptionPower = dimensionalReception->getPower();
-            OtherReceptionPowers.push_back(receptionPower);
-            EV_TRACE << "NonLoRa Interference power begin " << endl;
-            EV_TRACE << *receptionPower << endl;
-            EV_TRACE << "NonLoRaInterference power end" << endl;
-        }
-    }
 
-    const auto& bandpassFilter = makeShared<Boxcar2DFunction<double, simsec, Hz>>(simsec(listening->getStartTime()), simsec(listening->getEndTime()), centerFrequency - bandwidth / 2, centerFrequency + bandwidth / 2, 1);
-    std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower{\
-        makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[0])->multiply(bandpassFilter),\
-        makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[1])->multiply(bandpassFilter),\
-        makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[2])->multiply(bandpassFilter),\
-        makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[3])->multiply(bandpassFilter),\
-        makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[4])->multiply(bandpassFilter),\
-        makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[5])->multiply(bandpassFilter)} ;
+        const auto& bandpassFilter = makeShared<Boxcar2DFunction<double, simsec, Hz>>(simsec(listening->getStartTime()), simsec(listening->getEndTime()), centerFrequency - bandwidth / 2, centerFrequency + bandwidth / 2, 1);
+        std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower{\
+            makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[0])->multiply(bandpassFilter),\
+            makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[1])->multiply(bandpassFilter),\
+            makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[2])->multiply(bandpassFilter),\
+            makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[3])->multiply(bandpassFilter),\
+            makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[4])->multiply(bandpassFilter),\
+            makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[5])->multiply(bandpassFilter)} ;
 
-    const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRanoisePower = makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(OtherReceptionPowers);
+        const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRanoisePower = makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(OtherReceptionPowers);
 
-    /*for(int i=0;i<7;i++)
+        /*for(int i=0;i<7;i++)
     {
         LoRapower[i] = makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[i]);//->multiply(bandpassFilter);
     }*/
-
-
-    return new LoRaDimensionalNoise(listening->getStartTime(), listening->getEndTime(), centerFrequency, bandwidth, LoRapower, NonLoRanoisePower->multiply(bandpassFilter), dimensionalBackgroundNoise->getPower()->multiply(bandpassFilter));
+        return new LoRaDimensionalNoise(listening->getStartTime(), listening->getEndTime(), centerFrequency, bandwidth, LoRapower, NonLoRanoisePower->multiply(bandpassFilter), dimensionalBackgroundNoise->getPower()->multiply(bandpassFilter));
+    }
+    else
+    {
+        DimensionalAnalogModel::computeNoise(listening, interference);
+    }
 }
 
 const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *reception, const INoise *noise) const
@@ -139,8 +151,6 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
     //const auto& bandpassFilter = makeShared<Boxcar2DFunction<double, simsec, Hz>>(simsec(dimensionalReception->getStartTime()), simsec(dimensionalReception->getEndTime()),  dimensionalNoise->getCenterFrequency() - dimensionalNoise->getBandwidth()/2, dimensionalNoise->getCenterFrequency() + dimensionalNoise->getBandwidth()/2, 1);
 
 
-    const auto filtered_reception = loradimensionalReception->getPower();//->multiply(bandpassFilter);
-
     //TODO: why is there no need to filter the noise?
     //const auto& bandpassFilter = makeShared<Boxcar2DFunction<double, simsec, Hz>>(simsec(reception->getStartTime()), simsec(reception->getEndTime()), dimensionalReception->getCenterFrequency() - dimensionalReception->getBandwidth() / 2, dimensionalReception->getCenterFrequency() + dimensionalReception->getBandwidth() / 2, 1);
 
@@ -148,6 +158,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
     {
         if(loradimensionalReception)
         {
+            const auto filtered_reception = loradimensionalReception->getPower();//->multiply(bandpassFilter);
             //lora interference on lora noise
             int EquivalentLoRaSF = loradimensionalReception->getLoRaSF() - (int)log2( (loradimensionalReception->getBandwidth().get() / loradimensionalNoise->getBandwidth().get() ));
             //TODO: couldn't find a clean way to declare a new array of const pointers but adding the new noise to the correct SF
@@ -236,7 +247,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
         else
         {
             //non-lora interference on lora noise
-            const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRaPower = makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getNonLoRapower());
+            const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRaPower = makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(dimensionalReception->getPower(), loradimensionalNoise->getNonLoRapower());
             return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), loradimensionalNoise->getLoRapower(),NonLoRaPower,loradimensionalNoise->getBackgroundpower());
         }
     }
