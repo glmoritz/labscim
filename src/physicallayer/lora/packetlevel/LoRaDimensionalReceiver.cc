@@ -218,7 +218,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
         {
             if( W(loradimensionalsnir->getMinLoRa(LoRaSF)) < W(math::dBmW2mW(nonOrthDelta[loradimensionalReception->getLoRaSF()-7][LoRaSF-7])) )
             {
-                EV_DEBUG << "Reception is not successful: Strong interference from SF " << LoRaSF;
+                EV_DEBUG << "Reception is not successful: Strong interference from SF " << LoRaSF << endl;
                 return false;
             }
         }
@@ -226,7 +226,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
         {
             if( W(loradimensionalsnir->getMeanLoRa(LoRaSF)) < W(math::dBmW2mW(nonOrthDelta[loradimensionalReception->getLoRaSF()-7][LoRaSF-7])) )
             {
-                EV_DEBUG << "Reception is not successful: Strong interference from SF " << LoRaSF;
+                EV_DEBUG << "Reception is not successful: Strong interference from SF " << LoRaSF  << endl;
                 return false;
             }
         }

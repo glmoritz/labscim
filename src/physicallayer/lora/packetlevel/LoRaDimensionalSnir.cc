@@ -67,7 +67,7 @@ double LoRaDimensionalSnir::retMin(const Ptr<const IFunction<WpHz, Domain<simsec
     EV_TRACE << *snir << endl;
     EV_TRACE << "SNIR end" << endl;
     double minSNIR = snir->getMin(Interval<simsec, Hz>(startPoint, endPoint, 0b1, 0b0, 0b0));
-    EV_DEBUG << "Computing minimum SNIR: start = " << startPoint << ", end = " << endPoint << " -> minimum SNIR = " << minSNIR << endl;
+    EV_DEBUG << "Computing minimum SNIR: start = " << startPoint << ", end = " << endPoint << " -> minimum SNIR = " << math::fraction2dB(minSNIR) << " dB" << endl;
     return minSNIR;
 }
 
@@ -89,7 +89,7 @@ double LoRaDimensionalSnir::retMax(const Ptr<const IFunction<WpHz, Domain<simsec
     EV_TRACE << *snir << endl;
     EV_TRACE << "SNIR end" << endl;
     double maxSNIR = snir->getMax(Interval<simsec, Hz>(startPoint, endPoint, 0b1, 0b0, 0b0));
-    EV_DEBUG << "Computing maximum SNIR: start = " << startPoint << ", end = " << endPoint << " -> minimum SNIR = " << minSNIR << endl;
+    EV_DEBUG << "Computing maximum SNIR: start = " << startPoint << ", end = " << endPoint << " -> maximum SNIR = " << math::fraction2dB(maxSNIR) << " dB" << endl;
     return maxSNIR;
 }
 
@@ -111,7 +111,7 @@ double LoRaDimensionalSnir::retMean(const Ptr<const IFunction<WpHz, Domain<simse
     EV_TRACE << *snir << endl;
     EV_TRACE << "SNIR end" << endl;
     double meanSNIR = snir->getMean(Interval<simsec, Hz>(startPoint, endPoint, 0b1, 0b0, 0b0));
-    EV_DEBUG << "Computing mean SNIR: start = " << startPoint << ", end = " << endPoint << " -> minimum SNIR = " << minSNIR << endl;
+    EV_DEBUG << "Computing mean SNIR: start = " << startPoint << ", end = " << endPoint << " -> mean SNIR = " << math::fraction2dB(meanSNIR) << " dB" << endl;
     return meanSNIR;
 }
 

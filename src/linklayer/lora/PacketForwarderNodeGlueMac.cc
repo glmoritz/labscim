@@ -43,6 +43,8 @@
 #include "inet/linklayer/ieee802154/Ieee802154MacHeader_m.h"
 #include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
 #include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/common/geometry/common/GeographicCoordinateSystem.h"
+#include "inet/mobility/base/MobilityBase.h"
 #include "../../common/LabscimConnector.h"
 #include "../../common/labscim-lora-radio-protocol.h"
 #include "../../common/lora_gateway_setup.h"
@@ -639,6 +641,8 @@ void PacketForwarderNodeGlueMac::handleSelfMessage(cMessage *msg)
     {
     case BOOT_MSG:
     {
+        auto coordinateSystem = dynamic_cast<const IGeographicCoordinateSystem*>(getSimulation()->getSystemModule()->getSubmodule("coordinateSystem"));
+        auto mobility = dynamic_cast<MobilityBase*>(getParentModule()->getSubmodule("mobility"));
         struct lora_gateway_setup setup_msg;
         setup_msg.output_logs = par("OutputLogs").boolValue()?1:0;
         //EV_DETAIL << "Boot Message." << endl;
@@ -648,7 +652,20 @@ void PacketForwarderNodeGlueMac::handleSelfMessage(cMessage *msg)
         setup_msg.labscim_log_master = par("IsMQTTLogger").boolValue()?1:0;
         strcpy((char*)setup_msg.MQTTLoggerAddress, par("MQTTLoggerIPAddress").stringValue());
         strcpy((char*)setup_msg.MQTTLoggerApplicationTopic, par("MQTTLoggerApplicationTopic").stringValue());
-
+        if((coordinateSystem!=nullptr)&&(mobility!=nullptr))
+        {
+            Coord pos = mobility->getCurrentPosition();
+            GeoCoord Position = coordinateSystem->computeGeographicCoordinate(pos);
+            setup_msg.lat_deg = Position.latitude.get();
+            setup_msg.lon_deg = Position.longitude.get();
+            setup_msg.alt_m = Position.altitude.get();
+        }
+        else
+        {
+            setup_msg.lat_deg = 0.0;
+            setup_msg.lon_deg = 0.0;
+            setup_msg.alt_m = 0.0;
+        }
 #ifdef LABSCIM_LOG_COMMANDS
         std::stringstream stream;
         stream << "BOOT\n";

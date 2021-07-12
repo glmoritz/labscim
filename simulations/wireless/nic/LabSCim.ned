@@ -23,6 +23,7 @@
 
 package tsch.simulations.wireless.nic;
 
+import inet.common.geometry.common.SimpleGeographicCoordinateSystem;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.physicallayer.contract.packetlevel.IRadioMedium;
 import inet.visualizer.contract.IIntegratedVisualizer;
@@ -59,7 +60,12 @@ network LabSCim
         
         
         
-    submodules:      
+    submodules:     
+        coordinateSystem: SimpleGeographicCoordinateSystem {
+            parameters:
+                @display("p=100,150");
+        }
+         
         configurator: Ipv4NetworkConfigurator {
             parameters:
                 @display("p=100,100;is=s");
