@@ -15,6 +15,7 @@ struct loramac_node_setup
     uint64_t startup_time;
     uint64_t IsMaster;
     uint8_t output_logs;
+    uint64_t TimeReference;
 }__attribute__((packed));
 
 

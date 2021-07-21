@@ -24,6 +24,7 @@
 package tsch.simulations.wireless.nic;
 
 import inet.common.geometry.common.SimpleGeographicCoordinateSystem;
+import inet.visualizer.integrated.IntegratedCanvasVisualizer;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
 import inet.physicallayer.contract.packetlevel.IRadioMedium;
 import inet.visualizer.contract.IIntegratedVisualizer;
@@ -40,7 +41,7 @@ network LabSCim
         int SimulationAreaX = default(1000);
         int SimulationAreaY = default(1000);
         
-        @display("bgb=450,450");
+        @display("bgb=4500,4500");
         
         @statistic[UpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
         @statistic[UpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
@@ -60,7 +61,12 @@ network LabSCim
         
         
         
-    submodules:     
+    submodules:   
+        //visualizer: IntegratedCanvasVisualizer {
+        //    parameters:
+        //        @display("p=100,100");
+        //}        
+          
         coordinateSystem: SimpleGeographicCoordinateSystem {
             parameters:
                 @display("p=100,150");

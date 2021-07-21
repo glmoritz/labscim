@@ -119,6 +119,7 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
         LogFile << "," << l << "\n";
 
     }
+    LogFile.flush();
 }
 
 void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
@@ -191,6 +192,7 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
             }
         }
     }
+    LogFile.flush();
 }
 
 } // namespace physicallayer

@@ -65,7 +65,7 @@ namespace labscim {
 
 Define_Module(PacketForwarderNodeGlueMac);
 
-
+extern uint64_t gTimeReference;
 
 void PacketForwarderNodeGlueMac::initialize(int stage)
 {
@@ -649,6 +649,12 @@ void PacketForwarderNodeGlueMac::handleSelfMessage(cMessage *msg)
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
         interfaceEntry->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
         setup_msg.startup_time = (uint64_t)(simTime().dbl() * 1000000);
+        if(gTimeReference == 0)
+        {
+            struct timeval tv;
+            gettimeofday(&tv,NULL);
+            gTimeReference = (tv.tv_sec * 1000000) + tv.tv_usec - setup_msg.startup_time;
+        }
         setup_msg.labscim_log_master = par("IsMQTTLogger").boolValue()?1:0;
         strcpy((char*)setup_msg.MQTTLoggerAddress, par("MQTTLoggerIPAddress").stringValue());
         strcpy((char*)setup_msg.MQTTLoggerApplicationTopic, par("MQTTLoggerApplicationTopic").stringValue());
@@ -666,6 +672,7 @@ void PacketForwarderNodeGlueMac::handleSelfMessage(cMessage *msg)
             setup_msg.lon_deg = 0.0;
             setup_msg.alt_m = 0.0;
         }
+        setup_msg.TimeReference = gTimeReference;
 #ifdef LABSCIM_LOG_COMMANDS
         std::stringstream stream;
         stream << "BOOT\n";

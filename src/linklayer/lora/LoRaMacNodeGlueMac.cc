@@ -63,8 +63,7 @@ namespace labscim {
 
 Define_Module(LoRaMacNodeGlueMac);
 
-
-
+uint64_t gTimeReference = 0;
 
 void LoRaMacNodeGlueMac::initialize(int stage)
 {
@@ -584,7 +583,7 @@ void LoRaMacNodeGlueMac::ProcessCommands()
                     //EV_DEBUG << (uint8_t*)stream.str().c_str();
 #ifdef LABSCIM_LOG_COMMANDS
                     sprintf(log,"seq%4d\tPRINT_MESSAGE\n",hdr->sequence_number);
-                    Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
+                    //Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
 #endif
                     free(hdr);
                     break;
@@ -675,12 +674,19 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
         interfaceEntry->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
         setup_msg.startup_time = (uint64_t)(simTime().dbl() * 1000000);
+        if(gTimeReference == 0)
+        {
+            struct timeval tv;
+            gettimeofday(&tv,NULL);
+            gTimeReference = (tv.tv_sec * 1000000) + tv.tv_usec - setup_msg.startup_time;
+        }
 #ifdef LABSCIM_LOG_COMMANDS
         std::stringstream stream;
         stream << "BOOT\n";
         Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
         EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
+        setup_msg.TimeReference = gTimeReference;
         SendProtocolBoot((void*)&setup_msg,sizeof(struct loramac_node_setup));
         delete msg;
         break;
@@ -902,7 +908,6 @@ void LoRaMacNodeGlueMac::handleLowerPacket(Packet *packet)
     {
         if(radio->getRadioMode()!=IRadio::RADIO_MODE_RECEIVER)
         {
-            //no timer msgs should be received here, but we set radio to receiver just in case
             radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
         }
         mRX_fsm = RX_CONTINUOUS_LISTENING;
