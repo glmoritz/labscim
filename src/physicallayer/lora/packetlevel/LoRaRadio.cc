@@ -55,6 +55,7 @@ void LoRaRadio::initialize(int stage)
         iAmGateway = par("iAmGateway");
 
         LoRaTransmitter = check_and_cast<LoRaDimensionalTransmitter *>(getSubmodule("transmitter"));
+        LoRaTransmitter->setIamGateway(iAmGateway);
         LoRaReceiver = check_and_cast<LoRaDimensionalReceiver *>(getSubmodule("receiver"));
     }
 }
@@ -125,6 +126,7 @@ bool LoRaRadio::compareArrivals(cMessage* i1, cMessage* i2)
 {
     return (i1->getArrivalTime() < i2->getArrivalTime());
 }
+
 
 
 void LoRaRadio::startReception(cMessage *timer, IRadioSignal::SignalPart part)

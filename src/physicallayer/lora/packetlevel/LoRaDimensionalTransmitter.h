@@ -49,6 +49,9 @@ class INET_API LoRaDimensionalTransmitter : public FlatTransmitterBase, public D
     virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
     virtual const ITransmission *createTransmission(const IRadio *radio, const Packet *packet, const simtime_t startTime) const override;
 
+    virtual bool setIamGateway() const { return iAmGateway; }
+    virtual void setIamGateway(bool IamGateway) {this->iAmGateway = IamGateway;};
+
     virtual int getLoRaSF() const { return LoRaSF; }
     virtual void setLoRaSF(int LoRaSF) {this->LoRaSF = LoRaSF;};
 

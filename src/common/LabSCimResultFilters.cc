@@ -25,6 +25,7 @@
 #include "inet/physicallayer/base/packetlevel/FlatReceptionBase.h"
 #include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
 #include "LabSCimResultFilters.h"
+#include "../physicallayer/lora/packetlevel/LoRaDimensionalTransmission.h"
 
 namespace labscim {
 namespace utils {
@@ -46,6 +47,151 @@ void MeanSnirFromSnirIndFilter::receiveSignal(cResultFilter *prev, simtime_t_cre
     }
 #endif  // WITH_RADIO
 }
+
+
+Register_ResultFilter("LoRaSFFromReception", labscim::utils::filters::LoRaSFFromReception);
+void LoRaSFFromReception::receiveSignal(cResultFilter *prev, simtime_t_cref t, cObject *object, cObject *details)
+{
+#ifdef WITH_RADIO
+    if (auto reception = dynamic_cast<const IReception*>(object))
+    {
+        auto transmission = reception->getTransmission();
+        auto loratransmission = dynamic_cast<const labscim::physicallayer::LoRaDimensionalTransmission*>(transmission);
+
+        if(loratransmission)
+        {
+            fire(this, t, (long)loratransmission->getLoRaSF(), details);
+        }
+    }
+#endif  // WITH_RADIO
+}
+
+
+Register_ResultFilter("LoRaDRAU915FromReception", labscim::utils::filters::LoRaDRAU915FromReception);
+void LoRaDRAU915FromReception::receiveSignal(cResultFilter *prev, simtime_t_cref t, cObject *object, cObject *details)
+{
+#ifdef WITH_RADIO
+    if (auto reception = dynamic_cast<const IReception*>(object))
+    {
+        auto transmission = reception->getTransmission();
+        auto loratransmission = dynamic_cast<const labscim::physicallayer::LoRaDimensionalTransmission*>(transmission);
+
+        if(loratransmission)
+        {
+            long dr=-1;
+            if(loratransmission->getBandwidth()==Hz(500000))
+            {
+                dr = 20-loratransmission->getLoRaSF();
+            }
+            else if(loratransmission->getBandwidth()==Hz(125000))
+            {
+                dr = 12-loratransmission->getLoRaSF();
+            }
+            if ((dr == 12) && (loratransmission->getLoRaIamUplink()))
+            {
+                dr = 6;
+            }
+            fire(this, t, dr, details);
+        }
+    }
+#endif  // WITH_RADIO
+}
+
+
+Register_ResultFilter("LoRaDRAU915FromTransmission", labscim::utils::filters::LoRaDRAU915FromTransmission);
+void LoRaDRAU915FromTransmission::receiveSignal(cResultFilter *prev, simtime_t_cref t, cObject *object, cObject *details)
+{
+#ifdef WITH_RADIO
+    if (auto transmission = dynamic_cast<const ITransmission*>(object))
+    {
+        auto loratransmission = dynamic_cast<const labscim::physicallayer::LoRaDimensionalTransmission*>(transmission);
+
+        if(loratransmission)
+        {
+            long dr=-1;
+            if(loratransmission->getBandwidth()==Hz(500000))
+            {
+                dr = 20-loratransmission->getLoRaSF();
+            }
+            else if(loratransmission->getBandwidth()==Hz(125000))
+            {
+                dr = 12-loratransmission->getLoRaSF();
+            }
+            if ((dr == 12) && (loratransmission->getLoRaIamUplink()))
+            {
+                dr = 6;
+            }
+            fire(this, t, dr, details);
+        }
+    }
+#endif  // WITH_RADIO
+}
+
+
+
+Register_ResultFilter("LoRaBWFromReception", labscim::utils::filters::LoRaBWFromReception);
+void LoRaBWFromReception::receiveSignal(cResultFilter *prev, simtime_t_cref t, cObject *object, cObject *details)
+{
+#ifdef WITH_RADIO
+    if (auto reception = dynamic_cast<const IReception*>(object))
+    {
+        auto transmission = reception->getTransmission();
+        auto loratransmission = dynamic_cast<const labscim::physicallayer::LoRaDimensionalTransmission*>(transmission);
+
+        if(loratransmission)
+        {
+            fire(this, t, loratransmission->getBandwidth().get(), details);
+        }
+    }
+#endif  // WITH_RADIO
+}
+
+
+Register_ResultFilter("LoRaSFFromTransmission", labscim::utils::filters::LoRaSFFromTransmission);
+void LoRaSFFromTransmission::receiveSignal(cResultFilter *prev, simtime_t_cref t, cObject *object, cObject *details)
+{
+#ifdef WITH_RADIO
+    if (auto transmission = dynamic_cast<const ITransmission*>(object))
+    {
+        auto loratransmission = dynamic_cast<const labscim::physicallayer::LoRaDimensionalTransmission*>(transmission);
+        if(loratransmission)
+        {
+            fire(this, t, (long)loratransmission->getLoRaSF(), details);
+        }
+    }
+#endif  // WITH_RADIO
+}
+
+Register_ResultFilter("LoRaPowerFromTransmission", labscim::utils::filters::LoRaPowerFromTransmission);
+void LoRaPowerFromTransmission::receiveSignal(cResultFilter *prev, simtime_t_cref t, cObject *object, cObject *details)
+{
+#ifdef WITH_RADIO
+    if (auto transmission = dynamic_cast<const ITransmission*>(object))
+    {
+        auto loratransmission = dynamic_cast<const labscim::physicallayer::LoRaDimensionalTransmission*>(transmission);
+        if(loratransmission)
+        {
+            fire(this, t, math::mW2dBmW(loratransmission->getLoRaTransmissionPower().get()*1000), details);
+        }
+    }
+#endif  // WITH_RADIO
+}
+
+Register_ResultFilter("LoRaBWFromTransmission", labscim::utils::filters::LoRaBWFromTransmission);
+void LoRaBWFromTransmission::receiveSignal(cResultFilter *prev, simtime_t_cref t, cObject *object, cObject *details)
+{
+#ifdef WITH_RADIO
+    if (auto transmission = dynamic_cast<const ITransmission*>(object))
+    {
+        auto loratransmission = dynamic_cast<const labscim::physicallayer::LoRaDimensionalTransmission*>(transmission);
+        if(loratransmission)
+        {
+            fire(this, t, loratransmission->getBandwidth().get(), details);
+        }
+    }
+#endif  // WITH_RADIO
+}
+
 
 
 } // namespace filters

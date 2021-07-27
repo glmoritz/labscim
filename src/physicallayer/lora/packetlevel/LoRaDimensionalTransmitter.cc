@@ -85,7 +85,7 @@ const ITransmission *LoRaDimensionalTransmitter::createTransmission(const IRadio
     const Quaternion startOrientation = mobility->getCurrentAngularPosition();
     const Quaternion endOrientation = mobility->getCurrentAngularPosition();
     EV_DEBUG << "Start LoRa TX " << centerFrequency << ", BW" << bandWidth << ", SF " << RequestedLoraSF << ", CR 4/" << (RequestedLoraCR+4) << ", Power: " << math::mW2dBmW(transmissionPower.get()*1000) << " dBm" << endl;
-    return new LoRaDimensionalTransmission(transmitter, packet, startTime, endTime, Tpreamble, simtime_t::ZERO, Tpayload, startPosition, endPosition, startOrientation, endOrientation, modulation, b(0), packet->getTotalLength(), centerFrequency, bandWidth, transmissionBitrate, powerFunction,RequestedLoraSF,RequestedLoraCR);
+    return new LoRaDimensionalTransmission(transmitter, packet, startTime, endTime, Tpreamble, simtime_t::ZERO, Tpayload, startPosition, endPosition, startOrientation, endOrientation, modulation, b(0), packet->getTotalLength(), centerFrequency, bandWidth, transmissionBitrate, powerFunction,RequestedLoraSF,RequestedLoraCR, transmissionPower,!iAmGateway);
 }
 
 bps LoRaDimensionalTransmitter::getPacketDataRate(const Packet *packet) const
