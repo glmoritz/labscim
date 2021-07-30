@@ -16,6 +16,7 @@ struct loramac_node_setup
     uint64_t IsMaster;
     uint8_t output_logs;
     uint64_t TimeReference;
+    uint8_t AppKey[32];
 }__attribute__((packed));
 
 

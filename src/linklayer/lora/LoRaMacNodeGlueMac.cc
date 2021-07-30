@@ -27,6 +27,9 @@
 #include <cassert>
 #include <math.h>
 
+#include "cryptopp/cryptlib.h"
+#include "cryptopp/sha.h"
+
 #include "LoRaMacNodeGlueMac.h"
 #include "inet/common/FindModule.h"
 #include "inet/common/INETMath.h"
@@ -58,6 +61,7 @@
 using namespace inet::physicallayer;
 using namespace omnetpp;
 using namespace inet;
+using namespace CryptoPP;
 
 namespace labscim {
 
@@ -667,7 +671,14 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
     {
     case BOOT_MSG:
     {
+
         struct loramac_node_setup setup_msg;
+        SHA1 hash;
+        byte digest[40];
+
+        hash.Update((const byte*)mNodeName.data(), mNodeName.size());
+        hash.Final(digest);
+        memcpy(setup_msg.AppKey, digest, 32);
         setup_msg.output_logs = par("OutputLogs").boolValue()?1:0;
         setup_msg.IsMaster = par("IsMaster").boolValue()?1:0;
         //EV_DETAIL << "Boot Message." << endl;
@@ -688,6 +699,7 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
 #endif
         setup_msg.TimeReference = gTimeReference;
         SendProtocolBoot((void*)&setup_msg,sizeof(struct loramac_node_setup));
+
         delete msg;
         break;
     }

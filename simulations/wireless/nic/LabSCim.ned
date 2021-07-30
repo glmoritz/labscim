@@ -43,16 +43,23 @@ network LabSCim
         
         @display("bgb=4500,4500");
         
-        @statistic[UpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaDownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamPacketError](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaDownstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaNodeJoin](record=histogram,vector; interpolationmode=none);
+        @statistic[LoRaPacketRTT](record=histogram,vector?; interpolationmode=none);
+        
         @statistic[UpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
         @statistic[UpstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
         @statistic[UpstreamPacketError](record=histogram,vector?; interpolationmode=none);
         @statistic[DownstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
-        @statistic[DownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
-        @statistic[DownstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
-        @statistic[PacketRTT](record=histogram,vector?; interpolationmode=none);
         
-        @statistic[NodeJoin](record=histogram,vector; interpolationmode=none);
+        @statistic[DownstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
+        
+        
+        
         @statistic[NodeLeave](record=histogram,vector; interpolationmode=none);        
         @statistic[NodeAssociated](record=histogram,vector; interpolationmode=none);
         @statistic[NodeDisassociated](record=histogram,vector; interpolationmode=none);  
