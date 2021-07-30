@@ -77,6 +77,8 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IListening *listeni
         Hz bandwidth = bandListening->getBandwidth();
 
         std::array<std::vector<Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>>,6> LoRaReceptionPowers;
+        std::array<bool,6> LoRaInterfererPresent = {false,false,false,false,false,false};
+        bool NonLoRaInterfererPresent = false;
         std::vector<Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>> OtherReceptionPowers;
 
         const DimensionalNoise *dimensionalBackgroundNoise = check_and_cast_nullable<const DimensionalNoise *>(interference->getBackgroundNoise());
@@ -96,14 +98,26 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IListening *listeni
                 //Hz signalCarrierFrequency = loradimensionalReception->getCenterFrequency();
                 //Hz signalBandwidth = loradimensionalReception->getBandwidth();
                 //Hz interferenceChirpRate = signalBandwidth / pow(2,loradimensionalReception->getLoRaSF());
-                int EquivalentLoRaSF = loradimensionalReception->getLoRaSF() - (int)log2( loradimensionalReception->getBandwidth().get() / bandwidth.get() );
+                int EquivalentLoRaSF = loradimensionalReception->getLoRaSF();
+                if(!bandListening->getIsGatewayListening())
+                {
+                    EquivalentLoRaSF -= (int)log2( loradimensionalReception->getBandwidth().get() / bandwidth.get() );
+                }
                 auto receptionPower = loradimensionalReception->getPower();
                 //intraSF interference
                 if((EquivalentLoRaSF >= 7)&&(EquivalentLoRaSF <= 12))
                 {
-
                     LoRaReceptionPowers[EquivalentLoRaSF - 7].push_back(receptionPower);
-                    EV_TRACE << "LoRa Interference power begin " << endl;
+                    Hz InterferecenceBandStart = loradimensionalReception->getCenterFrequency() - loradimensionalReception->getBandwidth()/2;
+                    Hz InterferecenceBandEnd = loradimensionalReception->getCenterFrequency() + loradimensionalReception->getBandwidth()/2;
+                    Hz ListeningBandStart = centerFrequency - bandwidth/2;
+                    Hz ListeningBandEnd = centerFrequency + bandwidth/2;
+
+                    if (((InterferecenceBandStart > ListeningBandStart ) && (InterferecenceBandStart < ListeningBandEnd))||((InterferecenceBandEnd > ListeningBandStart ) && (InterferecenceBandEnd < ListeningBandEnd)))
+                    {
+                                LoRaInterfererPresent[EquivalentLoRaSF - 7] = true;
+                    }
+                               EV_TRACE << "LoRa Interference power begin " << endl;
                     EV_TRACE << *receptionPower << endl;
                     EV_TRACE << "LoRa Interference power end" << endl;
                 }
@@ -113,6 +127,14 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IListening *listeni
                 const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(interferingReception);
                 auto receptionPower = dimensionalReception->getPower();
                 OtherReceptionPowers.push_back(receptionPower);
+                Hz InterferecenceBandStart = loradimensionalReception->getCenterFrequency() - loradimensionalReception->getBandwidth()/2;
+                Hz InterferecenceBandEnd = loradimensionalReception->getCenterFrequency() + loradimensionalReception->getBandwidth()/2;
+                Hz ListeningBandStart = centerFrequency - bandwidth/2;
+                Hz ListeningBandEnd = centerFrequency + bandwidth/2;
+                if (((InterferecenceBandStart > ListeningBandStart ) && (InterferecenceBandStart < ListeningBandEnd))||((InterferecenceBandEnd > ListeningBandStart ) && (InterferecenceBandEnd < ListeningBandEnd)))
+                {
+                    NonLoRaInterfererPresent = true;
+                }
                 EV_TRACE << "NonLoRa Interference power begin " << endl;
                 EV_TRACE << *receptionPower << endl;
                 EV_TRACE << "NonLoRaInterference power end" << endl;
@@ -134,11 +156,20 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IListening *listeni
     {
         LoRapower[i] = makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(LoRaReceptionPowers[i]);//->multiply(bandpassFilter);
     }*/
-        return new LoRaDimensionalNoise(listening->getStartTime(), listening->getEndTime(), centerFrequency, bandwidth, LoRapower, NonLoRanoisePower->multiply(bandpassFilter), dimensionalBackgroundNoise->getPower()->multiply(bandpassFilter));
+        std::array<const bool,6> ConstLoRaInterfererPresent{ \
+            LoRaInterfererPresent[0],\
+            LoRaInterfererPresent[1],\
+            LoRaInterfererPresent[2],\
+            LoRaInterfererPresent[3],\
+            LoRaInterfererPresent[4],\
+            LoRaInterfererPresent[5]};
+
+        const bool ConstNonLoRaInterfererPresent = NonLoRaInterfererPresent;
+        return new LoRaDimensionalNoise(listening->getStartTime(), listening->getEndTime(), centerFrequency, bandwidth, LoRapower, NonLoRanoisePower->multiply(bandpassFilter), dimensionalBackgroundNoise->getPower()->multiply(bandpassFilter), ConstLoRaInterfererPresent, ConstNonLoRaInterfererPresent);
     }
     else
     {
-        DimensionalAnalogModel::computeNoise(listening, interference);
+        return DimensionalAnalogModel::computeNoise(listening, interference);
     }
 }
 
@@ -156,11 +187,30 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
 
     if(loradimensionalNoise)
     {
+        std::array<bool,6> LoRaInterfererPresent;
+        const bool NonLoRaInterfererPresent = loradimensionalNoise->getNonLoRaInterfererPresent();
+        for(uint64_t LoRaSF=7;LoRaSF<=12;LoRaSF++)
+        {
+            LoRaInterfererPresent[LoRaSF-7]=loradimensionalNoise->getLoRaInterfererPresent(LoRaSF);
+        }
+        std::array<const bool,6> ConstLoRaInterfererPresent{ \
+            LoRaInterfererPresent[0],\
+            LoRaInterfererPresent[1],\
+            LoRaInterfererPresent[2],\
+            LoRaInterfererPresent[3],\
+            LoRaInterfererPresent[4],\
+            LoRaInterfererPresent[5]};
+
         if(loradimensionalReception)
         {
             const auto filtered_reception = loradimensionalReception->getPower();//->multiply(bandpassFilter);
             //lora interference on lora noise
             int EquivalentLoRaSF = loradimensionalReception->getLoRaSF() - (int)log2( (loradimensionalReception->getBandwidth().get() / loradimensionalNoise->getBandwidth().get() ));
+
+            if((EquivalentLoRaSF>=7)&&(EquivalentLoRaSF<=12))
+            {
+                LoRaInterfererPresent[EquivalentLoRaSF-7] = true;
+            }
             //TODO: couldn't find a clean way to declare a new array of const pointers but adding the new noise to the correct SF
             //i think that this is the ugliest code I've ever made
             switch(EquivalentLoRaSF)
@@ -174,7 +224,8 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
                     loradimensionalNoise->getLoRapower(10),\
                     loradimensionalNoise->getLoRapower(11),\
                     loradimensionalNoise->getLoRapower(12)};
-                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower());
+
+                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent,NonLoRaInterfererPresent);
                 break;
             }
             case 8:
@@ -186,7 +237,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
                     loradimensionalNoise->getLoRapower(10),\
                     loradimensionalNoise->getLoRapower(11),\
                     loradimensionalNoise->getLoRapower(12)};
-                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower());
+                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent,NonLoRaInterfererPresent);
                 break;
             }
             case 9:
@@ -198,7 +249,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
                     loradimensionalNoise->getLoRapower(10),\
                     loradimensionalNoise->getLoRapower(11),\
                     loradimensionalNoise->getLoRapower(12)};
-                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower());
+                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent,NonLoRaInterfererPresent);
                 break;
             }
             case 10:
@@ -210,7 +261,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
                     makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getLoRapower(10)),\
                     loradimensionalNoise->getLoRapower(11),\
                     loradimensionalNoise->getLoRapower(12)};
-                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower());
+                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent,NonLoRaInterfererPresent);
                 break;
             }
             case 11:
@@ -222,7 +273,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
                     loradimensionalNoise->getLoRapower(10),\
                     makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getLoRapower(11)),\
                     loradimensionalNoise->getLoRapower(12)};
-                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower());
+                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent,NonLoRaInterfererPresent);
                 break;
             }
             case 12:
@@ -234,12 +285,12 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
                     loradimensionalNoise->getLoRapower(10),\
                     loradimensionalNoise->getLoRapower(11),\
                     makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(filtered_reception, loradimensionalNoise->getLoRapower(12))};
-                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower());
+                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), LoRapower,loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent,NonLoRaInterfererPresent);
                 break;
             }
             default:
             {
-                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), loradimensionalNoise->getLoRapower(),loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower());
+                return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), loradimensionalNoise->getLoRapower(),loradimensionalNoise->getNonLoRapower(),loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent,NonLoRaInterfererPresent);
                 break;
             }
             }
@@ -248,7 +299,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
         {
             //non-lora interference on lora noise
             const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRaPower = makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(dimensionalReception->getPower(), loradimensionalNoise->getNonLoRapower());
-            return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), loradimensionalNoise->getLoRapower(),NonLoRaPower,loradimensionalNoise->getBackgroundpower());
+            return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), loradimensionalNoise->getLoRapower(),NonLoRaPower,loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent, true);
         }
     }
     else

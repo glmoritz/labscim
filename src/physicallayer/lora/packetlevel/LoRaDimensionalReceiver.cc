@@ -45,6 +45,7 @@ namespace physicallayer {
 
 Define_Module(LoRaDimensionalReceiver);
 
+
 LoRaDimensionalReceiver::LoRaDimensionalReceiver() :
     FlatReceiverBase(),
     iAmGateway(false)
@@ -204,6 +205,9 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
     auto loradimensionalReception = check_and_cast<const LoRaDimensionalReception *>(reception);
     auto loradimensionalsnir = check_and_cast<const LoRaDimensionalSnir *>(snir);
 
+    bool InterfererPresent = false;
+
+
 
     //check interference in each LoRaSF using:
 
@@ -216,18 +220,26 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
     {
         if (snirThresholdMode == SnirThresholdMode::STM_MIN)
         {
-            if( W(loradimensionalsnir->getMinLoRa(LoRaSF)) < W(math::dBmW2mW(nonOrthDelta[loradimensionalReception->getLoRaSF()-7][LoRaSF-7])) )
+            if(loradimensionalsnir->getLoRaInterfererPresent(LoRaSF))
             {
-                EV_DEBUG << "Reception is not successful: Strong interference from SF " << LoRaSF << endl;
-                return false;
+                InterfererPresent = true;
+                if( W(loradimensionalsnir->getMinLoRa(LoRaSF)) < W(math::dBmW2mW(nonOrthDelta[loradimensionalReception->getLoRaSF()-7][LoRaSF-7])) )
+                {
+                    EV_DEBUG << "Reception is not successful: Strong interference from SF " << LoRaSF << endl;
+                    return false;
+                }
             }
         }
         else if (snirThresholdMode == SnirThresholdMode::STM_MEAN)
         {
-            if( W(loradimensionalsnir->getMeanLoRa(LoRaSF)) < W(math::dBmW2mW(nonOrthDelta[loradimensionalReception->getLoRaSF()-7][LoRaSF-7])) )
+            if(loradimensionalsnir->getLoRaInterfererPresent(LoRaSF))
             {
-                EV_DEBUG << "Reception is not successful: Strong interference from SF " << LoRaSF  << endl;
-                return false;
+                InterfererPresent = true;
+                if( W(loradimensionalsnir->getMeanLoRa(LoRaSF)) < W(math::dBmW2mW(nonOrthDelta[loradimensionalReception->getLoRaSF()-7][LoRaSF-7])) )
+                {
+                    EV_DEBUG << "Reception is not successful: Strong interference from SF " << LoRaSF  << endl;
+                    return false;
+                }
             }
         }
         else
@@ -255,34 +267,58 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
     //doi: 10.1109/JIOT.2019.2962976.
     //->this paper indicates reception above -15db for SF12 (TABLE III)
 
-
-    if (snirThresholdMode == SnirThresholdMode::STM_MIN)
+    if(loradimensionalsnir->getNonLoRaInterfererPresent() )
     {
-        if( W(loradimensionalsnir->getMinNonLoRa()) < snirNonLoRaThreshold )
+        InterfererPresent = true;
+        if (snirThresholdMode == SnirThresholdMode::STM_MIN)
         {
-            EV_DEBUG << "Reception is not successful: Strong interference from non lora interferers ";
-            return false;
+            if( W(loradimensionalsnir->getMinNonLoRa()) < snirNonLoRaThreshold )
+            {
+                EV_DEBUG << "Reception is not successful: Strong interference from non lora interferers ";
+                return false;
+            }
+        }
+        else if (snirThresholdMode == SnirThresholdMode::STM_MEAN)
+        {
+            if( W(loradimensionalsnir->getMeanNonLoRa()) <  snirNonLoRaThreshold )
+            {
+                EV_DEBUG << "Reception is not successful: Strong interference from non lora interferers ";
+                return false;
+            }
+        }
+        else
+        {
+            throw cRuntimeError("Unknown SNIR threshold mode: '%s'", snirThresholdMode);
         }
     }
-    else if (snirThresholdMode == SnirThresholdMode::STM_MEAN)
+
+    if(!InterfererPresent)
     {
-        if( W(loradimensionalsnir->getMeanNonLoRa()) <  snirNonLoRaThreshold )
+        if (snirThresholdMode == SnirThresholdMode::STM_MIN)
         {
-            EV_DEBUG << "Reception is not successful: Strong interference from non lora interferers ";
-            return false;
+            if( W(loradimensionalsnir->getMin()) < W(math::dBmW2mW(AWGNDelta[loradimensionalReception->getLoRaSF()-7])))
+            {
+                EV_DEBUG << "Reception is not successful. Low SNR on awgn reception " << endl;
+                return false;
+            }
+
+        }
+        else if (snirThresholdMode == SnirThresholdMode::STM_MEAN)
+        {
+            InterfererPresent = true;
+            if( W(loradimensionalsnir->getMean()) < W(math::dBmW2mW(AWGNDelta[loradimensionalReception->getLoRaSF()-7])) )
+            {
+                EV_DEBUG << "Reception is not successful. Low SNR on awgn reception " << endl;
+                return false;
+            }
         }
     }
-    else
-    {
-        throw cRuntimeError("Unknown SNIR threshold mode: '%s'", snirThresholdMode);
-    }
-
     return true;
 }
 
 const IListening *LoRaDimensionalReceiver::createListening(const IRadio *radio, const simtime_t startTime, const simtime_t endTime, const Coord startPosition, const Coord endPosition) const
 {
-    return new LoRaBandListening(radio, startTime, endTime, startPosition, endPosition, centerFrequency, bandwidth, LoRaSF);
+    return new LoRaBandListening(radio, startTime, endTime, startPosition, endPosition, centerFrequency, bandwidth, LoRaSF, iAmGateway);
 }
 
 const IReceptionResult *LoRaDimensionalReceiver::computeReceptionResult(const IListening *listening, const IReception *reception, const IInterference *interference, const ISnir *snir, const std::vector<const IReceptionDecision *> *decisions) const

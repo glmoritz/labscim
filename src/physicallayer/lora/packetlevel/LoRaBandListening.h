@@ -30,13 +30,16 @@ class INET_API LoRaBandListening : public BandListening
 {
   protected:
     const int LoRaSF;
+    const bool GatewayListening;
 
   public:
-    LoRaBandListening(const IRadio *radio, simtime_t startTime, simtime_t endTime, Coord startPosition, Coord endPosition, Hz centerFrequency, Hz bandwidth, int LoRaSF );
+    LoRaBandListening(const IRadio *radio, simtime_t startTime, simtime_t endTime, Coord startPosition, Coord endPosition, Hz centerFrequency, Hz bandwidth, int LoRaSF, bool GatewayListening );
 
     virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
 
     virtual int getLoRaSF() const { return LoRaSF; }
+
+    virtual int getIsGatewayListening() const { return GatewayListening; }
 };
 
 } // namespace physicallayer

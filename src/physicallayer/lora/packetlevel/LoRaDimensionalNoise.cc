@@ -24,11 +24,13 @@ namespace physicallayer {
 
 
 
-LoRaDimensionalNoise::LoRaDimensionalNoise(simtime_t startTime, simtime_t endTime, Hz centerFrequency, Hz bandwidth, const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& Backgroundpower):
+LoRaDimensionalNoise::LoRaDimensionalNoise(simtime_t startTime, simtime_t endTime, Hz centerFrequency, Hz bandwidth, const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& Backgroundpower, const std::array<const bool, 6> LoRaInterfererPresent, const bool NonLoRaInterfererPresent):
     DimensionalNoise(startTime, endTime, centerFrequency, bandwidth, ComputeTotalNoise(LoRapower,NonLoRapower,Backgroundpower)),
     LoRapower(LoRapower),
     NonLoRapower(NonLoRapower),
-    Backgroundpower(Backgroundpower)
+    Backgroundpower(Backgroundpower),
+    LoRaInterfererPresent(LoRaInterfererPresent),
+    NonLoRaInterfererPresent(NonLoRaInterfererPresent)
 {
 }
 
@@ -51,6 +53,8 @@ std::ostream& LoRaDimensionalNoise::printToStream(std::ostream& stream, int leve
 //        stream << ", power = " << power;
     return DimensionalNoise::printToStream(stream, level);
 }
+
+
 
 W LoRaDimensionalNoise::retMinPower(simtime_t startTime, simtime_t endTime, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>> p) const
 {

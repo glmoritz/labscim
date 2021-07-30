@@ -43,6 +43,7 @@ class INET_API LoRaDimensionalReceiver : public FlatReceiverBase
            {-25, -25, -25, -24, -23, 1}
         };
 
+    const float  AWGNDelta[6] = {-7.5, -10.0, -12.5, -15.0, -17.5,-20.0};
 
   protected:
     W minInterferencePower;
@@ -71,6 +72,10 @@ class INET_API LoRaDimensionalReceiver : public FlatReceiverBase
 
     virtual const IListening* createListening(const IRadio *radio, const simtime_t startTime, const simtime_t endTime, const Coord startPosition, const Coord endPosition) const override;
     virtual const IReceptionResult *computeReceptionResult(const IListening *listening, const IReception *reception, const IInterference *interference, const ISnir *snir, const std::vector<const IReceptionDecision *> *decisions) const override;
+
+
+    virtual bool getIamGateway() const { return iAmGateway; }
+    virtual void setIamGateway(bool IamGateway) {this->iAmGateway = IamGateway;};
 
 
     virtual int getLoRaSF() const { return LoRaSF; }

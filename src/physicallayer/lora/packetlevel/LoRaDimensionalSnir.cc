@@ -213,6 +213,48 @@ double LoRaDimensionalSnir::getMeanNonLoRa() const
     return meanNonLoRaSNIR;
 }
 
+bool LoRaDimensionalSnir::getLoRaInterfererPresent(int LoRaSF) const
+{
+    const LoRaDimensionalNoise *dimensionalNoise = dynamic_cast<const LoRaDimensionalNoise *>(noise);
+    if(dimensionalNoise->getLoRaInterfererPresent(LoRaSF))
+    {
+        const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+        auto noisepower = dimensionalNoise->getLoRapower(LoRaSF);
+        simsec startTime = simsec(reception->getStartTime());
+        simsec endTime = simsec(reception->getEndTime());
+        Hz centerFrequency = dimensionalReception->getCenterFrequency();
+        Hz bandwidth = dimensionalReception->getBandwidth();
+        Point<simsec, Hz> startPoint(startTime, centerFrequency - bandwidth / 2);
+        Point<simsec, Hz> endPoint(endTime, centerFrequency + bandwidth / 2);
+        return noisepower->getMax(Interval<simsec, Hz>(startPoint, endPoint, 0b1, 0b0, 0b0)).get()>0.0;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool LoRaDimensionalSnir::getNonLoRaInterfererPresent() const
+{
+    const LoRaDimensionalNoise *dimensionalNoise = dynamic_cast<const LoRaDimensionalNoise *>(noise);
+    if(dimensionalNoise->getNonLoRaInterfererPresent())
+    {
+        const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+        auto noisepower = dimensionalNoise->getNonLoRapower();
+        simsec startTime = simsec(reception->getStartTime());
+        simsec endTime = simsec(reception->getEndTime());
+        Hz centerFrequency = dimensionalReception->getCenterFrequency();
+        Hz bandwidth = dimensionalReception->getBandwidth();
+        Point<simsec, Hz> startPoint(startTime, centerFrequency - bandwidth / 2);
+        Point<simsec, Hz> endPoint(endTime, centerFrequency + bandwidth / 2);
+        return noisepower->getMax(Interval<simsec, Hz>(startPoint, endPoint, 0b1, 0b0, 0b0)).get()>0.0;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 } // namespace physicallayer
 
 } // namespace labscim

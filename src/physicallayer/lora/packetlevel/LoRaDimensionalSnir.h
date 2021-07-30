@@ -60,6 +60,10 @@ class INET_API LoRaDimensionalSnir : public DimensionalSnir
     virtual double getMinNonLoRa() const;
     virtual double getMaxNonLoRa() const;
     virtual double getMeanNonLoRa() const;
+
+    virtual bool getLoRaInterfererPresent(int LoRaSF) const;
+    virtual bool getNonLoRaInterfererPresent() const;
+
 };
 
 } // namespace physicallayer

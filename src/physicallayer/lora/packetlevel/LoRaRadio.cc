@@ -57,6 +57,7 @@ void LoRaRadio::initialize(int stage)
         LoRaTransmitter = check_and_cast<LoRaDimensionalTransmitter *>(getSubmodule("transmitter"));
         LoRaTransmitter->setIamGateway(iAmGateway);
         LoRaReceiver = check_and_cast<LoRaDimensionalReceiver *>(getSubmodule("receiver"));
+        LoRaReceiver->setIamGateway(iAmGateway);
     }
 }
 
