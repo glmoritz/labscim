@@ -36,6 +36,30 @@ import inet.linklayer.contract.IMacProtocol;
 module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
 {
     parameters:
+        
+        @statistic[TSCHUpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHUpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHUpstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHUpstreamPacketError](record=histogram,vector?; interpolationmode=none);
+        
+        @statistic[TSCHDownstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHDownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHDownstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHPacketRTT](record=histogram,vector?; interpolationmode=none);        
+        
+        @statistic[TSCHNodeJoin](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHNodeLeave](record=histogram,vector?; interpolationmode=none);        
+        @statistic[TSCHNodeAssociated](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHNodeDisassociated](record=histogram,vector?; interpolationmode=none);
+        
+        @statistic[TSCHUpstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHUpstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[TSCHUpstreamAoIArea](record=histogram,vector?; interpolationmode=none);
+        
+        @statistic[TSCHDownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[TSCHDownstreamAoIArea](record=histogram,vector?; interpolationmode=none);
+        
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
         
         volatile double BootTime @unit(s) = default(0); //time to boot up the node 

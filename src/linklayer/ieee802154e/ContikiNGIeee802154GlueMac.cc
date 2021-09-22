@@ -551,6 +551,14 @@ void ContikiNGIeee802154GlueMac::ProcessCommands()
                     free(cmd);
                     break;
                 }
+                case LABSCIM_GET_RANDOM:
+                {
+                    struct labscim_get_random* get_random = (struct labscim_get_random*)cmd;
+                    union random_number resp;
+                    GenerateRandomNumber(getRNG(0), get_random->distribution_type, get_random->param_1, get_random->param_2, get_random->param_3, &resp);
+                    SendRandomNumber(get_random->hdr.sequence_number,resp);
+                    free(cmd);
+                }
                 default:
                 {
                     CommandsExecuted--;

@@ -21,92 +21,156 @@
  */
 
 #include "LabscimMeshRandomMobility.h"
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/index/rtree.hpp>
+
+// to store queries results
+#include <vector>
+
+// just for output
+#include <iostream>
+#include <boost/foreach.hpp>
+
+namespace bg = boost::geometry;
+namespace bgi = boost::geometry::index;
+
+using  point  = bg::model::point <double, 2, bg::cs::cartesian>;
+using  pointI = std::pair<point, uint64_t>;
+using  box = bg::model::box<point>;
 
 namespace labscim {
 
 Define_Module(LabscimMeshRandomMobility);
 
-std::list<const Coord*> LabscimMeshRandomMobility::mPoints;
+
+std::map<uint32_t, std::vector<Coord>> LabscimMeshRandomMobility::mPoints;
+uint32_t LabscimMeshRandomMobility::maxContext=0;
 
 void LabscimMeshRandomMobility::setInitialPosition()
 {
+    //this code is extremely inneficient (memorywise and computingwise)
+    //TODO: there is an elegant way of doing that?
+
     minimumDistance = par("minimumDistance");
     maximumDistance = par("maximumDistance");
     numNeighbors = par("numNeighbors");
-
+    numPoints = par("numPoints");
 
     bool fixedNode =  par("fixedNode");
     unsigned int index = subjectModule->getIndex();
-    Coord newcoord;
-
-    lastPosition.x = par("initialX");
-    lastPosition.y = par("initialY");
-    lastPosition.z = par("initialZ");
-
-    newcoord.x = par("initialX");
-    newcoord.y = par("initialY");
-    newcoord.z = par("initialZ");
+    uint32_t context = par("context");
+    double initialZ = par("initialZ");
 
 
-
-    if(!fixedNode)
+    if(mPoints.find(context) == mPoints.end())
     {
-        int32_t neighbors = std::min(static_cast<int32_t>(mPoints.size()),numNeighbors);
-        uint32_t tries=0;
-        bool too_near = false;
-        bool relax = false;
-        uint32_t num_neigh = 0;
-        do
+        std::vector<Coord> l;
+        l.reserve(numPoints);
+        mPoints.insert(std::make_pair(context, l));
+    }
+
+
+    if(mPoints[context].empty())
+    {
+        std::vector<pointI> ok_points;
+        uint64_t index = 0;
+        uint64_t tries = 0;
+
+        while(ok_points.size() < numPoints)
         {
-            uint32_t item = intuniform(0,std::distance(mPoints.begin(), mPoints.end()) - 1);
-            std::list<const Coord*>::iterator rnd_it = mPoints.begin();
-            std::advance(rnd_it, item);
+            uint64_t points_to_add = numPoints - ok_points.size();
 
-            double angle = uniform(0,2*M_PI);
-            double module = uniform(minimumDistance,maximumDistance);
-            newcoord.x = (*rnd_it)->x + module*cos(angle);
-            newcoord.y = (*rnd_it)->y + module*sin(angle);
-
-            too_near = false;
-            num_neigh = 0;
-
-            for(std::list<const Coord*>::iterator it = mPoints.begin(); it != mPoints.end(); it++)
+            //create rtree by packing (faster queries)
+            for ( uint64_t i = 0 ; i < points_to_add ; ++i )
             {
-                if((*it)!=(const Coord*)&lastPosition)
+                ok_points.push_back(pointI(point(uniform(constraintAreaMin.x,constraintAreaMax.x),uniform(constraintAreaMin.y,constraintAreaMax.y)), index++));
+            }
+            if(tries>40)
+            {
+                //giving up
+                break;
+            }
+            bgi::rtree<pointI, bgi::quadratic<16> > rtree(ok_points);
+
+            //now check if every point meets the mobility criteria
+            ok_points.clear();
+            for(auto const& c: rtree)
+            {
+                std::vector<pointI> result_n;
+                rtree.query(bgi::nearest(std::get<0>(c), numNeighbors+1), std::back_inserter(result_n));
+                uint64_t failed = false;
+
+                for(auto neighbor=result_n.begin(); neighbor!=result_n.end(); ++neighbor)
                 {
-                    double distance = sqrt((newcoord.x - (*it)->x)*(newcoord.x - (*it)->x) + (newcoord.y - (*it)->y)*(newcoord.y - (*it)->y));
-                    if(distance < minimumDistance)
+                    double clearance = bg::distance(std::get<0>(c), std::get<0>(*neighbor));
+                    if( (clearance>0) && ( (clearance<minimumDistance) || (clearance>maximumDistance) ) )
                     {
-                        too_near = true;
+                        failed = true;
                         break;
                     }
-                    if(distance < maximumDistance)
-                    {
-                        num_neigh++;
-                        if(num_neigh>=neighbors)
-                        {
-                            break;
-                        }
-                    }
+                }
+                if(!failed)
+                {
+                    ok_points.push_back(c);
                 }
             }
             tries++;
-            if(tries>20)
-            {
-                relax = true;
-            }
-            else
-            {
-                relax = false;
-            }
-        }while( ( (too_near&&!relax) || ((num_neigh<neighbors)&&!relax) || (newcoord.x < constraintAreaMin.x) ||  (newcoord.y < constraintAreaMin.y) ||  (newcoord.x > constraintAreaMax.y) || (newcoord.y > constraintAreaMax.y) ) && (tries<50) );
+        }
+        std::vector<Coord> coords;
+        for(auto p=ok_points.begin(); p!=ok_points.end(); ++p)
+        {
+            point allocated = std::get<0>(*p);
+            coords.push_back(Coord(bg::get<0>(allocated),bg::get<1>(allocated),initialZ));
+        }
+        mPoints[context] = coords;
     }
 
-    lastPosition.x = newcoord.x;
-    lastPosition.y = newcoord.y;
-    lastPosition.z = newcoord.z;
-    mPoints.push_back((const Coord*)&lastPosition);
+    if(!fixedNode)
+    {
+        if(index < mPoints[context].size())
+        {
+            lastPosition = mPoints[context][index];
+        }
+        else
+        {
+            lastPosition.x = uniform(constraintAreaMin.x,constraintAreaMax.x);
+            lastPosition.y = uniform(constraintAreaMin.y,constraintAreaMax.y);
+            lastPosition.z = par("initialZ");
+        }
+        EV_DEBUG << "position initialized randomly to form a mesh: index: (" << index << ") " << lastPosition << endl;
+        if (par("updateDisplayString"))
+            updateDisplayStringFromMobilityState();
+    }
+    else
+    {
+        if(hasPar("InitByCartesianCoord"))
+        {
+            if (par("InitByCartesianCoord"))
+            {
+                updateDisplayStringFromMobilityState();
+                //just ignore the coordinate system
+                lastPosition.x = par("initialX");
+                lastPosition.y = par("initialY");
+                lastPosition.z = par("initialZ");
+                EV_DEBUG << "position initialized from initialX/Y/Z parameters: " << lastPosition << endl;
+                if (par("updateDisplayString"))
+                    updateDisplayStringFromMobilityState();
 
+                recordScalar("x", lastPosition.x);
+                recordScalar("y", lastPosition.y);
+                recordScalar("z", lastPosition.z);
+
+                return;
+            }
+        }
+        StationaryMobility::setInitialPosition();
+        recordScalar("x", lastPosition.x);
+        recordScalar("y", lastPosition.y);
+        recordScalar("z", lastPosition.z);
+        return;
+    }
     recordScalar("x", lastPosition.x);
     recordScalar("y", lastPosition.y);
     recordScalar("z", lastPosition.z);

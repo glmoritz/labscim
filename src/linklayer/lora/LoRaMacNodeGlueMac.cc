@@ -487,6 +487,7 @@ cMessage* LoRaMacNodeGlueMac::GetScheduledTimeEvent(uint32_t sequence_number)
             }
         }
     }
+    EV_ERROR << "Could not find timer";
     return nullptr;
 }
 
@@ -538,23 +539,29 @@ void LoRaMacNodeGlueMac::ProcessCommands()
                     if(ste->is_relative)
                     {
 #ifdef LABSCIM_LOG_COMMANDS
-                        sprintf(log,"seq%4d\tSET_TIME_EVENT\n",hdr->sequence_number);
+                        sprintf(log,"seq%4d\tSET_TIME_EVENT,%s, %f\n",hdr->sequence_number,mNodeName,  (us + (double)ste->time_us ) / 1000000);
 #endif
-                        scheduleAt((us + (double)ste->time_us)/1000000, TimeEventMsg);
+
+
                         mScheduledTimerMsgs.push_front(TimeEventMsg);
+                        scheduleAt((us + (double)ste->time_us)/1000000, TimeEventMsg);
                     }
                     else
                     {
                         if(ste->time_us >= us)
                         {
 #ifdef LABSCIM_LOG_COMMANDS
-                            sprintf(log,"seq%4d\tSET_TIME_EVENT\n",hdr->sequence_number);
+                            sprintf(log,"seq%4d\tSET_TIME_EVENT, %s, %f\n",hdr->sequence_number, mNodeName, ste->time_us);
 #endif
-                            scheduleAt((double)ste->time_us/1000000, TimeEventMsg);
                             mScheduledTimerMsgs.push_front(TimeEventMsg);
+                            scheduleAt((double)ste->time_us/1000000, TimeEventMsg);
                         }
                         else
                         {
+                            EV_ERROR << "scheduling a past timer";
+#ifdef LABSCIM_LOG_COMMANDS
+                            sprintf(log,"seq%4d\tSET_TIME_EVENT, %s, %f, ERROR - PAST TIMER\n",hdr->sequence_number, mNodeName, ste->time_us);
+#endif
                             free(cmd);
                             delete TimeEventMsg;
                         }
@@ -572,8 +579,16 @@ void LoRaMacNodeGlueMac::ProcessCommands()
                         free(to_be_cancelled->getContextPointer());
                         delete(to_be_cancelled);
 #ifdef LABSCIM_LOG_COMMANDS
-                        sprintf(log,"seq%4d\tCANCEL_TIME_EVENT\n",hdr->sequence_number);
+                        sprintf(log,"seq%4d\tCANCEL_TIME_EVENT, event %d,OK, %s\n",hdr->sequence_number,cte->cancel_sequence_number,mNodeName);
 #endif
+                    }
+                    else
+                    {
+#ifdef LABSCIM_LOG_COMMANDS
+                        sprintf(log,"seq%4d\tCANCEL_TIME_EVENT, event %d, NOT FOUND, %s\n",hdr->sequence_number, cte->cancel_sequence_number, mNodeName);
+#endif
+
+                        EV_ERROR << "Nullptr on cancel time event";
                     }
                     free(cte);
                     break;
@@ -666,6 +681,11 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
     bool WaitForCommand = true;
     mCurrentProcessingMsg=msg;
 
+#ifdef LABSCIM_LOG_COMMANDS
+        char log[128];
+        log[0] = 0;
+#endif
+
     //EV_DETAIL << "It is wakeup time." << endl;
     switch(msg->getKind())
     {
@@ -675,7 +695,6 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
         struct loramac_node_setup setup_msg;
         SHA1 hash;
         byte digest[40];
-
         hash.Update((const byte*)mNodeName.data(), mNodeName.size());
         hash.Final(digest);
         memcpy(setup_msg.AppKey, digest, 32);
@@ -711,11 +730,21 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
         {
             struct labscim_set_time_event* ste = (struct labscim_set_time_event*)msg->getContextPointer();
             SendTimeEvent(ste->hdr.sequence_number, ste->time_event_id,us);
+#ifdef LABSCIM_LOG_COMMANDS
+            {
+                char log[256];
+                sprintf(log,"\tTIME_EVENT, %s, event, %d, time %f\n", mNodeName,ste->hdr.sequence_number,us);
+            }
+#endif
             mScheduledTimerMsgs.remove(msg);
             free(ste);
         }
         else
         {
+#ifdef LABSCIM_LOG_COMMANDS
+            sprintf(log,"\tTIME_EVENT, %s, nullptr time msg\n", mNodeName);
+#endif
+            EV_ERROR << "Nullptr on loramac timer msg";
             WaitForCommand = false;
         }
         delete msg;
@@ -833,6 +862,12 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
         break;
     }
     }
+#ifdef LABSCIM_LOG_COMMANDS
+    if(log[0]!=0)
+    {
+        labscim_log(log, "pro ");
+    }
+#endif
 
     if(WaitForCommand)
     {

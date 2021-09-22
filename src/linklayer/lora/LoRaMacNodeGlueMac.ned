@@ -36,6 +36,14 @@ import inet.linklayer.contract.IMacProtocol;
 module LoRaMacNodeGlueMac extends MacProtocolBase like IMacProtocol
 {
     parameters:
+        @statistic[LoRaUpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaDownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaNodeJoin](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaPacketRTT](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaDownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaDownstreamAoIArea](record=histogram,vector?; interpolationmode=none);
+        
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
         
         volatile double BootTime @unit(s) = default(0); //time to boot up the node 

@@ -23,12 +23,14 @@
 #ifndef __INET_MESHRANDOMMOBILITY_H
 #define __INET_MESHRANDOMMOBILITY_H
 
-#include "inet/mobility/base/StationaryMobilityBase.h"
+#include "inet/mobility/static/StationaryMobility.h"
 #include "inet/common/geometry/common/Coord.h"
 
 using namespace inet;
 
 namespace labscim {
+
+
 
 /**
  * @brief Mobility model which places all hosts randomly, but each node have at  least numNeighbors Neighbors within maximumDistance meters
@@ -38,21 +40,23 @@ namespace labscim {
  * @ingroup mobility
  * @author Guilherme Luiz Moritz
  */
-class INET_API LabscimMeshRandomMobility : public StationaryMobilityBase
+class INET_API LabscimMeshRandomMobility : public StationaryMobility
 {
   protected:
-    static std::list<const Coord*> mPoints;
+    static std::map<uint32_t, std::vector<Coord>> mPoints;
+    static uint32_t maxContext;
 
     double minimumDistance;
     double maximumDistance;
     int32_t numNeighbors;
+    int32_t numPoints;
 
     /** @brief Initializes the position according to the mobility model. */
     virtual void setInitialPosition() override;
 
   public:
     LabscimMeshRandomMobility() {};
-    ~LabscimMeshRandomMobility() {mPoints.remove((const Coord*)&lastPosition);};
+    ~LabscimMeshRandomMobility() {};
 };
 
 }

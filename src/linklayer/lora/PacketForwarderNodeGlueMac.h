@@ -97,6 +97,7 @@ public:
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, double value, cObject *details) override;
 
 protected:
+
     std::string mNodeName;
 
     uint32_t nbBufferSize;

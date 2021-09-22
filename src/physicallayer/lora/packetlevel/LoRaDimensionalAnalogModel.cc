@@ -127,8 +127,8 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IListening *listeni
                 const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(interferingReception);
                 auto receptionPower = dimensionalReception->getPower();
                 OtherReceptionPowers.push_back(receptionPower);
-                Hz InterferecenceBandStart = loradimensionalReception->getCenterFrequency() - loradimensionalReception->getBandwidth()/2;
-                Hz InterferecenceBandEnd = loradimensionalReception->getCenterFrequency() + loradimensionalReception->getBandwidth()/2;
+                Hz InterferecenceBandStart = dimensionalReception->getCenterFrequency() - dimensionalReception->getBandwidth()/2;
+                Hz InterferecenceBandEnd = dimensionalReception->getCenterFrequency() + dimensionalReception->getBandwidth()/2;
                 Hz ListeningBandStart = centerFrequency - bandwidth/2;
                 Hz ListeningBandEnd = centerFrequency + bandwidth/2;
                 if (((InterferecenceBandStart > ListeningBandStart ) && (InterferecenceBandStart < ListeningBandEnd))||((InterferecenceBandEnd > ListeningBandStart ) && (InterferecenceBandEnd < ListeningBandEnd)))
