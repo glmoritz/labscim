@@ -626,14 +626,25 @@ void LoRaMacNodeGlueMac::ProcessCommands()
                     free(cmd);
                     break;
                 }
-                case LABSCIM_SIGNAL_EMIT:
+                case LABSCIM_SIGNAL_EMIT_DOUBLE:
                 {
-                    struct labscim_signal_emit* emit_signal = (struct labscim_signal_emit*)cmd;
+                    struct labscim_signal_emit_double* emit_signal = (struct labscim_signal_emit_double *)cmd;
 #ifdef LABSCIM_LOG_COMMANDS
-                    sprintf(log,"seq%4d\tLABSCIM_SIGNAL_EMIT\n",hdr->sequence_number);
+                    sprintf(log,"seq%4d\tLABSCIM_SIGNAL_EMIT_DOUBLE\n",hdr->sequence_number);
 #endif
                     EV_DEBUG << "Emmiting " << getSignalName(emit_signal->signal_id) << ". Value: " << emit_signal->value;
                     emit(emit_signal->signal_id, emit_signal->value);
+                    free(cmd);
+                    break;
+                }
+                case LABSCIM_SIGNAL_EMIT_CHAR:
+                {
+                    struct labscim_signal_emit_char* emit_signal = (struct labscim_signal_emit_char *)cmd;
+#ifdef LABSCIM_LOG_COMMANDS
+                    sprintf(log,"seq%4d\tLABSCIM_SIGNAL_EMIT_CHAR\n",hdr->sequence_number);
+#endif
+                    EV_DEBUG << "Emmiting " << getSignalName(emit_signal->signal_id) << ". Value: (binary string)";
+                    emit(emit_signal->signal_id, emit_signal->string);
                     free(cmd);
                     break;
                 }

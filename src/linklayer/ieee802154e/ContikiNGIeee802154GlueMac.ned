@@ -27,7 +27,7 @@ import inet.queueing.contract.IPacketQueue;
 import inet.linklayer.base.MacProtocolBase;
 import inet.linklayer.contract.IMacProtocol;
 
-@namespace(tsch);
+@namespace(labscim);
 
 //
 // Generic CSMA protocol supporting Mac-ACKs as well as
@@ -90,15 +90,10 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
         double aTurnaroundTime @unit(s) = default(0 s);//default(0.000240 s);    //Section 20.6.9 - Table 11-1 -> 12 symbols @ 50k baud
         
         string radioModule = default("^.radio");   // The path to the Radio module  //FIXME remove default value               
-        @class(ContikiNGIeee802154GlueMac);        
+        @class(ContikiNGIeee802154GlueMac);     
         
-        @statisticTemplate[nbStats](record=histogram,vector?; interpolationmode=none);
-    submodules:
-        queue: <default("DropTailQueue")> like IPacketQueue {
-            parameters:
-                packetCapacity = default(100);
-                @display("p=100,100;q=l2queue");
-        }
+        
+    
     connections allowunconnected:
 }
 

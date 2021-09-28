@@ -37,10 +37,9 @@
 #include "../../common/labscim-contiki-radio-protocol.h"
 
 using namespace inet;
-using namespace labscim;
 
 
-namespace tsch {
+namespace labscim {
 
 /**
  * @brief Generic CSMA Mac-Layer.
@@ -98,6 +97,7 @@ public:
 
     /** @brief Handle control messages from lower layer */
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details) override;
+    virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details) override;
 
 
 protected:
@@ -139,6 +139,8 @@ protected:
     double txPower;
 
     std::vector<std::string> mRegisteredSignals;
+    std::vector<uint64_t> mSubscribedSignals;
+
     cProperty *statisticTemplate;
 
     std::string mNodeName;

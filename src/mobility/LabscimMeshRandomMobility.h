@@ -44,6 +44,7 @@ class INET_API LabscimMeshRandomMobility : public StationaryMobility
 {
   protected:
     static std::map<uint32_t, std::vector<Coord>> mPoints;
+    static std::map<uint32_t, uint32_t> mGoodPoints;
     static uint32_t maxContext;
 
     double minimumDistance;

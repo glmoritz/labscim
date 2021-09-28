@@ -46,6 +46,8 @@ public:
 
     void SendRadioResponse(uint16_t RadioResponse, uint64_t CurrentTime, void* RadioStruct, size_t RadioStructLen, uint32_t SequenceNumber);
 
+    void SendSignal(uint64_t Signal, uint64_t CurrentTime, void* SignalStruct, size_t SignalStructLen);
+
     void SendRegisterResponse(uint32_t SequenceNumber, uint64_t SignalID);
 
     void SendRandomNumber(uint32_t SequenceNumber, union random_number Result);
