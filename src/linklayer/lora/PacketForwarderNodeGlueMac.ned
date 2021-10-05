@@ -40,9 +40,9 @@ module PacketForwarderNodeGlueMac extends MacProtocolBase like IMacProtocol
         @statistic[LoRaUpstreamPacketError](record=histogram,vector?; interpolationmode=none);
         @statistic[LoRaDownstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
         
-        @statistic[LoRaUpstreamAoIMax](record=histogram,vector?; interpolationmode=none);
-        @statistic[LoRaUpstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
-        @statistic[LoRaUpstreamAoIArea](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaDownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaDownstreamAoIArea](record=histogram,vector?; interpolationmode=none);        
         
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
         bool IsMQTTLogger = default(false); //the buffer size for socket connection with contiking instance

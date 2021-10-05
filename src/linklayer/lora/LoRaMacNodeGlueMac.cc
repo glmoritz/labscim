@@ -52,6 +52,7 @@
 #include "../../common/labscim_log.h"
 #include "../../common/labscim_socket.h"
 #include "../../common/sx126x_labscim.h"
+#include "../../common/cLabscimSignal.h"
 #include "../../physicallayer/lora/packetlevel/LoRaTags_m.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadioControlInfo_m.h"
 #include "../../physicallayer/lora/packetlevel/LoRaDimensionalTransmitter.h"
@@ -626,6 +627,17 @@ void LoRaMacNodeGlueMac::ProcessCommands()
                     free(cmd);
                     break;
                 }
+                case LABSCIM_SIGNAL_SUBSCRIBE:
+                {
+                    struct labscim_signal_subscribe* sub = (struct labscim_signal_subscribe*)cmd;
+                    getSimulation()->getSystemModule()->subscribe(sub->signal_id, this);
+                    mSubscribedSignals.push_back(sub->signal_id);
+#ifdef LABSCIM_LOG_COMMANDS
+                    sprintf(log,"seq%4d\tLABSCIM_SIGNAL_SUBSCRIBE\n",hdr->sequence_number);
+#endif
+                    free(cmd);
+                    break;
+                }
                 case LABSCIM_SIGNAL_EMIT_DOUBLE:
                 {
                     struct labscim_signal_emit_double* emit_signal = (struct labscim_signal_emit_double *)cmd;
@@ -643,8 +655,9 @@ void LoRaMacNodeGlueMac::ProcessCommands()
 #ifdef LABSCIM_LOG_COMMANDS
                     sprintf(log,"seq%4d\tLABSCIM_SIGNAL_EMIT_CHAR\n",hdr->sequence_number);
 #endif
+                    cLabscimSignal sig(emit_signal->string,emit_signal->string_size);
                     EV_DEBUG << "Emmiting " << getSignalName(emit_signal->signal_id) << ". Value: (binary string)";
-                    emit(emit_signal->signal_id, emit_signal->string);
+                    emit(emit_signal->signal_id, &sig);
                     free(cmd);
                     break;
                 }
@@ -994,6 +1007,24 @@ void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID,
         interfaceEntry->setDatarate(value);
     }
 }
+
+void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
+{
+    Enter_Method_Silent();
+    MacProtocolBase::receiveSignal(source, signalID, obj, details);
+    if(std::find(mSubscribedSignals.begin(), mSubscribedSignals.end(), signalID) != mSubscribedSignals.end())
+    {
+        cLabscimSignal* sig = dynamic_cast<cLabscimSignal*>(obj);
+        if(sig)
+        {
+            char Msg[256];
+            sig->getMessage(Msg,256);
+            SendSignal(signalID, (uint64_t)std::round((simTime().dbl() * 1000000)), Msg, sig->getMessageSize()<256?sig->getMessageSize():256);
+        }
+        ProcessCommands();
+    }
+}
+
 
 void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details)
 {

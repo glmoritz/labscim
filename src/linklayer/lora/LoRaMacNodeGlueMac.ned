@@ -37,12 +37,12 @@ module LoRaMacNodeGlueMac extends MacProtocolBase like IMacProtocol
 {
     parameters:
         @statistic[LoRaUpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
-        @statistic[LoRaDownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
         @statistic[LoRaNodeJoin](record=histogram,vector?; interpolationmode=none);
         @statistic[LoRaPacketRTT](record=histogram,vector?; interpolationmode=none);
-        @statistic[LoRaDownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
-        @statistic[LoRaDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
-        @statistic[LoRaDownstreamAoIArea](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaUpstreamAoIArea](record=histogram,vector?; interpolationmode=none);  
         
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
         

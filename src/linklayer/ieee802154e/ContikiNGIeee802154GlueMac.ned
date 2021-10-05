@@ -47,10 +47,8 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
         @statistic[TSCHDownstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
         @statistic[TSCHPacketRTT](record=histogram,vector?; interpolationmode=none);        
         
-        @statistic[TSCHNodeJoin](record=histogram,vector?; interpolationmode=none);
-        @statistic[TSCHNodeLeave](record=histogram,vector?; interpolationmode=none);        
-        @statistic[TSCHNodeAssociated](record=histogram,vector?; interpolationmode=none);
-        @statistic[TSCHNodeDisassociated](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHNodeJoin](record=histogram,vector; interpolationmode=sample-hold);                
+        @statistic[TSCHNodeAssociated](record=histogram,vector; interpolationmode=sample-hold);        
         
         @statistic[TSCHUpstreamAoIMax](record=histogram,vector?; interpolationmode=none);
         @statistic[TSCHUpstreamAoIMin](record=histogram,vector?; interpolationmode=none);        

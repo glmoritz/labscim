@@ -96,6 +96,7 @@ public:
 
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, double value, cObject *details) override;
 
+    virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details) override;
 
 protected:
     std::string mNodeName;
@@ -157,6 +158,7 @@ protected:
 
 
     std::vector<std::string> mRegisteredSignals;
+    std::vector<uint64_t> mSubscribedSignals;
     cProperty *statisticTemplate;
 
     std::list<cMessage*> mScheduledTimerMsgs;

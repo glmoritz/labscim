@@ -35,6 +35,7 @@
 #include "../../common/LabscimConnector.h"
 #include "../../common/labscim_contiking_setup.h"
 #include "../../common/labscim-contiki-radio-protocol.h"
+#include "../../common/cLabscimSignal.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadioControlInfo_m.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadio.h"
 
@@ -96,6 +97,8 @@ public:
 
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, double value, cObject *details) override;
 
+    virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details) override;
+
 protected:
 
     std::string mNodeName;
@@ -142,6 +145,7 @@ protected:
 
 
     std::vector<std::string> mRegisteredSignals;
+    std::vector<uint64_t> mSubscribedSignals;
     cProperty *statisticTemplate;
 
     std::list<cMessage*> mScheduledTimerMsgs;
