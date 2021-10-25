@@ -7,6 +7,7 @@
 
 #include "LabscimConnector.h"
 #include <string>
+#include <errno.h>
 #include <iostream>
 #include <stdexcept>
 #include <stdio.h>
@@ -23,7 +24,9 @@ std::string LabscimConnector::ExecuteCommand(const char* cmd)
     FILE* pipe = popen(cmd, "r");
     if (!pipe)
     {
-        throw std::runtime_error("popen() failed!");
+        char err[256];
+        sprintf(err, "popen() failed (%s)!",strerror(errno));
+        throw std::runtime_error(err);
     }
     try
     {

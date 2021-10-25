@@ -519,6 +519,9 @@ void ContikiNGIeee802154GlueMac::ProcessCommands()
                     sprintf(log,"seq%4d\tPRINT_MESSAGE\n",hdr->sequence_number);
                     Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
 #endif
+#ifdef LABSCIM_LOG_OUTPUT
+                    Node_Log_Output(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
+#endif
                     free(hdr);
                     break;
                 }

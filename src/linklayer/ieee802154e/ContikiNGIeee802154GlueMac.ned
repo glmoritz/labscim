@@ -47,8 +47,8 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
         @statistic[TSCHDownstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
         @statistic[TSCHPacketRTT](record=histogram,vector?; interpolationmode=none);        
         
-        @statistic[TSCHNodeJoin](record=histogram,vector; interpolationmode=sample-hold);                
-        @statistic[TSCHNodeAssociated](record=histogram,vector; interpolationmode=sample-hold);        
+        @statistic[TSCHNodeJoin](record=last,histogram,vector; interpolationmode=sample-hold);                
+        @statistic[TSCHNodeAssociated](record=last,histogram,vector; interpolationmode=sample-hold);        
         
         @statistic[TSCHUpstreamAoIMax](record=histogram,vector?; interpolationmode=none);
         @statistic[TSCHUpstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
@@ -58,7 +58,7 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
         @statistic[TSCHDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
         @statistic[TSCHDownstreamAoIArea](record=histogram,vector?; interpolationmode=none);
         
-        int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
+        int SocketBufferSize = default(1024); //the buffer size for socket connection with contiking instance
         
         volatile double BootTime @unit(s) = default(0); //time to boot up the node 
                 
