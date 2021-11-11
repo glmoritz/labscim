@@ -62,9 +62,6 @@ namespace labscim {
 
 Define_Module(ContikiNGIeee802154GlueMac);
 
-
-
-
 void ContikiNGIeee802154GlueMac::initialize(int stage)
 {
     MacProtocolBase::initialize(stage);
@@ -80,6 +77,20 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
         cModule *radioModule = getModuleFromPar<cModule>(par("radioModule"), this);
+        mLastRadioModeSwitch=0;
+        for(uint32_t i=0;i<physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1;i++)
+        {
+            mRadioModeTimes[i]=0;
+        }
+        mLastRadioMode = physicallayer::IRadio::RadioMode::RADIO_MODE_OFF;
+        mRadioModeTimesSignals[physicallayer::IRadio::RadioMode::RADIO_MODE_OFF] = cComponent::registerSignal("radioOffTimeChanged");
+        mRadioModeTimesSignals[physicallayer::IRadio::RadioMode::RADIO_MODE_SLEEP] = cComponent::registerSignal("radioSleepTimeChanged");
+        mRadioModeTimesSignals[physicallayer::IRadio::RadioMode::RADIO_MODE_RECEIVER] = cComponent::registerSignal("radioRxTimeChanged");
+        mRadioModeTimesSignals[physicallayer::IRadio::RadioMode::RADIO_MODE_TRANSMITTER] = cComponent::registerSignal("radioTxTimeChanged");
+        mRadioModeTimesSignals[physicallayer::IRadio::RadioMode::RADIO_MODE_TRANSCEIVER] = cComponent::registerSignal("radioTxRxTimeChanged");
+        mRadioModeTimesSignals[physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING] = cComponent::registerSignal("radioSwitchingTimeChanged");
+
+
         radioModule->subscribe(IRadio::radioModeChangedSignal, this);
         radioModule->subscribe(IRadio::transmissionStateChangedSignal, this);
         radio = check_and_cast<IRadio *>(radioModule);
@@ -144,7 +155,8 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
 
 void ContikiNGIeee802154GlueMac::finish()
 {
-
+    mRadioModeTimes[mLastRadioMode] += simTime() - mLastRadioModeSwitch;
+    emit(mRadioModeTimesSignals[mLastRadioMode], mRadioModeTimes[mLastRadioMode]);
 }
 
 ContikiNGIeee802154GlueMac::~ContikiNGIeee802154GlueMac()
@@ -836,6 +848,17 @@ void ContikiNGIeee802154GlueMac::receiveSignal(cComponent *source, simsignal_t s
             EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
             ProcessCommands();
+        }
+    }
+    else if (signalID == IRadio::radioModeChangedSignal)
+    {
+        IRadio::RadioMode newRadioMode = static_cast<IRadio::RadioMode>(value);
+        if(mLastRadioMode != newRadioMode)
+        {
+            mRadioModeTimes[mLastRadioMode] += simTime() - mLastRadioModeSwitch;
+            emit(mRadioModeTimesSignals[mLastRadioMode], mRadioModeTimes[mLastRadioMode]);
+            mLastRadioModeSwitch = simTime();
+            mLastRadioMode = newRadioMode;
         }
     }
 }

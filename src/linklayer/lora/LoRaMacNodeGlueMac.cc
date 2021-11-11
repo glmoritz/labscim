@@ -82,6 +82,20 @@ void LoRaMacNodeGlueMac::initialize(int stage)
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
         cModule *radioModule = getModuleFromPar<cModule>(par("radioModule"), this);
+
+        mLastRadioModeSwitch=0;
+        for(uint32_t i=0;i<inet::physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1;i++)
+        {
+            mRadioModeTimes[i]=0;
+        }
+        mLastRadioMode = inet::physicallayer::IRadio::RadioMode::RADIO_MODE_OFF;
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_OFF] = cComponent::registerSignal("radioOffTimeChanged");
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_SLEEP] = cComponent::registerSignal("radioSleepTimeChanged");
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_RECEIVER] = cComponent::registerSignal("radioRxTimeChanged");
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_TRANSMITTER] = cComponent::registerSignal("radioTxTimeChanged");
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_TRANSCEIVER] = cComponent::registerSignal("radioTxRxTimeChanged");
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING] = cComponent::registerSignal("radioSwitchingTimeChanged");
+
         radioModule->subscribe(IRadio::radioModeChangedSignal, this);
         radioModule->subscribe(IRadio::transmissionStateChangedSignal, this);
         radioModule->subscribe(labscim::physicallayer::LoRaRadio::loraradio_datarate_changed, this);
@@ -160,7 +174,8 @@ void LoRaMacNodeGlueMac::initialize(int stage)
 
 void LoRaMacNodeGlueMac::finish()
 {
-
+    mRadioModeTimes[mLastRadioMode] += simTime() - mLastRadioModeSwitch;
+    emit(mRadioModeTimesSignals[mLastRadioMode], mRadioModeTimes[mLastRadioMode]);
 }
 
 LoRaMacNodeGlueMac::~LoRaMacNodeGlueMac()
@@ -1077,6 +1092,17 @@ void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID,
             EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
             ProcessCommands();
+        }
+    }
+    else if (signalID == IRadio::radioModeChangedSignal)
+    {
+        IRadio::RadioMode newRadioMode = static_cast<IRadio::RadioMode>(value);
+        if(mLastRadioMode != newRadioMode)
+        {
+            mRadioModeTimes[mLastRadioMode] += simTime() - mLastRadioModeSwitch;
+            emit(mRadioModeTimesSignals[mLastRadioMode], mRadioModeTimes[mLastRadioMode]);
+            mLastRadioModeSwitch = simTime();
+            mLastRadioMode = newRadioMode;
         }
     }
 }

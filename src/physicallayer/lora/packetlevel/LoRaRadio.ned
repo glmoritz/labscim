@@ -35,7 +35,7 @@ module LoRaRadio extends FlatRadioBase
         
         //@statistic[txSF](title="SF from transmitted packets (SF)"; source=LoRaSFFromTransmission(transmissionStarted); record=histogram,vector);
         //@statistic[txBandwidth](title="Bandwidth from transmitted packets (Hz)"; source=LoRaBWFromTransmission(transmissionStarted); record=histogram,vector);
-        @statistic[txPower](title="Power from received packets (Hz)"; source=LoRaPowerFromTransmission(transmissionEnded); record=histogram,vector?);
+        @statistic[txPower](title="Power from transmitted packets (Hz)"; source=LoRaPowerFromTransmission(transmissionEnded); record=histogram,vector?);
         @statistic[txDR](title="LoRa AU915 Datarate from transmitted packets"; source=LoRaDRAU915FromTransmission(transmissionEnded); record=histogram,vector?);        
 
         

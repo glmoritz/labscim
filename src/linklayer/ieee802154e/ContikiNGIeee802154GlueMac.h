@@ -122,6 +122,12 @@ protected:
     physicallayer::IRadio *radio;
     physicallayer::IRadio::TransmissionState transmissionState;
 
+    simtime_t mLastRadioModeSwitch;
+    simtime_t mRadioModeTimes[physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1];
+    simsignal_t mRadioModeTimesSignals[physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1];
+    physicallayer::IRadio::RadioMode mLastRadioMode;
+
+
     /** @brief Length of the header*/
     int headerLength;
 
@@ -157,6 +163,8 @@ protected:
     std::list<cMessage*> mScheduledTimerMsgs;
     cMessage* mCCATimerMsg;
     uint32_t mTransmitRequestSeqNo;
+
+
 
 protected:
     /** @brief Generate new interface address*/

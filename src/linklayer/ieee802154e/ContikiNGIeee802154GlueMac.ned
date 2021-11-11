@@ -58,6 +58,13 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
         @statistic[TSCHDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
         @statistic[TSCHDownstreamAoIArea](record=histogram,vector?; interpolationmode=none);
         
+        @statistic[radioOffTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
+        @statistic[radioSleepTimeChanged](record=last,vector?; interpolationmode=sample-hold);        
+        @statistic[radioRxTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
+        @statistic[radioTxTimeChanged](record=last,vector?; interpolationmode=sample-hold);        
+        @statistic[radioTxRxTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
+        @statistic[radioSwitchingTimeChanged](record=last,vector?; interpolationmode=sample-hold);
+        
         int SocketBufferSize = default(1024); //the buffer size for socket connection with contiking instance
         
         volatile double BootTime @unit(s) = default(0); //time to boot up the node 

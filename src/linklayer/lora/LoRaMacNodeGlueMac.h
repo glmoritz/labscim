@@ -140,6 +140,11 @@ protected:
     inet::physicallayer::IRadio *radio;
     inet::physicallayer::IRadio::TransmissionState mTransmissionState;
 
+    simtime_t mLastRadioModeSwitch;
+    simtime_t mRadioModeTimes[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1];
+    simsignal_t mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1];
+    inet::physicallayer::IRadio::RadioMode mLastRadioMode;
+
     labscim::physicallayer::LoRaRadio* mLoRaRadio;
     bool mRadioConfigured;
 

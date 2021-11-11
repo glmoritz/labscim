@@ -44,6 +44,13 @@ module LoRaMacNodeGlueMac extends MacProtocolBase like IMacProtocol
         @statistic[LoRaUpstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
         @statistic[LoRaUpstreamAoIArea](record=histogram,vector?; interpolationmode=none);  
         
+        @statistic[radioOffTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
+        @statistic[radioSleepTimeChanged](record=last,vector?; interpolationmode=sample-hold);        
+        @statistic[radioRxTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
+        @statistic[radioTxTimeChanged](record=last,vector?; interpolationmode=sample-hold);        
+        @statistic[radioTxRxTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
+        @statistic[radioSwitchingTimeChanged](record=last,vector?; interpolationmode=sample-hold);
+        
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
         
         volatile double BootTime @unit(s) = default(0); //time to boot up the node 
