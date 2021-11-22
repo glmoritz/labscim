@@ -80,6 +80,8 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
 		bool OutputLogs = default(false); // If true, contiki will write its printfs to a file
 		bool TSCHCoordinator = default(false); // If true, contiki node will be a TSCH coordinator
 		int NodeProcessConnectionPort = default(9608);//The default TCP port that will be used for connection                                          
+		
+		bool RequestDownstream = default(false);
                                           
         // length of MAC header
         int headerLength @unit(b) = default(72 b);

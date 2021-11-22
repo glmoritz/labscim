@@ -47,6 +47,9 @@ void LabscimStationaryMobility::setInitialPosition()
             EV_DEBUG << "position initialized from initialX/Y/Z parameters: " << lastPosition << endl;
             if (par("updateDisplayString"))
                 updateDisplayStringFromMobilityState();
+            recordScalar("x", lastPosition.x);
+            recordScalar("y", lastPosition.y);
+            recordScalar("z", lastPosition.z);
             return;
         }
     }

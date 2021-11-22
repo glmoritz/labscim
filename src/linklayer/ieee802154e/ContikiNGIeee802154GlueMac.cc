@@ -641,6 +641,7 @@ void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
         struct contiki_node_setup setup_msg;
         setup_msg.output_logs = (uint8_t)par("OutputLogs").boolValue();
         setup_msg.tsch_coordinator = (uint8_t)par("TSCHCoordinator").boolValue()?1:0;
+        setup_msg.request_downstream = (uint8_t)par("RequestDownstream").boolValue()?1:0;
 
         //EV_DETAIL << "Boot Message." << endl;
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
@@ -855,8 +856,11 @@ void ContikiNGIeee802154GlueMac::receiveSignal(cComponent *source, simsignal_t s
         IRadio::RadioMode newRadioMode = static_cast<IRadio::RadioMode>(value);
         if(mLastRadioMode != newRadioMode)
         {
-            mRadioModeTimes[mLastRadioMode] += simTime() - mLastRadioModeSwitch;
-            emit(mRadioModeTimesSignals[mLastRadioMode], mRadioModeTimes[mLastRadioMode]);
+            if (simTime() >= getSimulation()->getWarmupPeriod())
+            {
+                mRadioModeTimes[mLastRadioMode] += simTime() - mLastRadioModeSwitch;
+                emit(mRadioModeTimesSignals[mLastRadioMode], mRadioModeTimes[mLastRadioMode]);
+            }
             mLastRadioModeSwitch = simTime();
             mLastRadioMode = newRadioMode;
         }

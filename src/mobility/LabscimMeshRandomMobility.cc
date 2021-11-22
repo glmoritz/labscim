@@ -318,7 +318,6 @@ void LabscimMeshRandomMobility::setInitialPosition()
                 recordScalar("x", lastPosition.x);
                 recordScalar("y", lastPosition.y);
                 recordScalar("z", lastPosition.z);
-
                 return;
             }
         }
@@ -329,7 +328,6 @@ void LabscimMeshRandomMobility::setInitialPosition()
         recordScalar("z", lastPosition.z);
         return;
     }
-    recordScalar("PositionViolation", 4);
     recordScalar("x", lastPosition.x);
     recordScalar("y", lastPosition.y);
     recordScalar("z", lastPosition.z);

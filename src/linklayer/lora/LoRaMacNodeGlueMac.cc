@@ -1099,8 +1099,11 @@ void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID,
         IRadio::RadioMode newRadioMode = static_cast<IRadio::RadioMode>(value);
         if(mLastRadioMode != newRadioMode)
         {
-            mRadioModeTimes[mLastRadioMode] += simTime() - mLastRadioModeSwitch;
-            emit(mRadioModeTimesSignals[mLastRadioMode], mRadioModeTimes[mLastRadioMode]);
+            if (simTime() >= getSimulation()->getWarmupPeriod())
+            {
+                mRadioModeTimes[mLastRadioMode] += simTime() - mLastRadioModeSwitch;
+                emit(mRadioModeTimesSignals[mLastRadioMode], mRadioModeTimes[mLastRadioMode]);
+            }
             mLastRadioModeSwitch = simTime();
             mLastRadioMode = newRadioMode;
         }
