@@ -56,8 +56,10 @@ Define_Module(LabscimMeshRandomMobility);
 
 std::map<uint32_t, std::vector<Coord>> LabscimMeshRandomMobility::mPoints;
 std::map<uint32_t, uint32_t> LabscimMeshRandomMobility::mGoodPoints;
+std::map<uint32_t, uint64_t> LabscimMeshRandomMobility::mUsedPoints;
 
 uint32_t LabscimMeshRandomMobility::maxContext=0;
+
 
 void LabscimMeshRandomMobility::setInitialPosition()
 {
@@ -74,7 +76,6 @@ void LabscimMeshRandomMobility::setInitialPosition()
     numPoints = par("numPoints");
 
     bool fixedNode =  par("fixedNode");
-    unsigned int index = subjectModule->getIndex();
     uint32_t context = par("context");
     double initialZ = par("initialZ");
 
@@ -92,6 +93,7 @@ void LabscimMeshRandomMobility::setInitialPosition()
     {
         uint32_t loop_tries = 0;
         bool points_ok = false;
+        mUsedPoints[context] = 0;
 
         while((!points_ok)&&(loop_tries<5))
         {
@@ -279,6 +281,8 @@ void LabscimMeshRandomMobility::setInitialPosition()
             mGoodPoints[context] = 0;
         }
     }
+
+    uint64_t index = mUsedPoints[context]++;
 
     if(!fixedNode)
     {

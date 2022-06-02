@@ -22,7 +22,7 @@
 #include "LoRaDimensionalTransmitter.h"
 #include "LoRaDimensionalTransmission.h"
 #include "LoRaTags_m.h"
-#include "../../../common/sx126x_labscim.h"
+#include "../../../common/labscim_sx126x.h"
 
 using namespace inet;
 using namespace inet::physicallayer;
@@ -135,40 +135,39 @@ simtime_t LoRaDimensionalTransmitter::getPacketRadioTimeOnAir( const Packet *pac
     return Tpayload + Tpreamble;
 }
 
-uint32_t LoRaDimensionalTransmitter::RadioGetLoRaBandwidthInHz( RadioLoRaBandwidths_t bw )
+uint32_t LoRaDimensionalTransmitter::RadioGetLoRaBandwidthInHz( sx126x_lora_bw_e bw )
 {
     uint32_t bandwidthInHz = 0;
-
     switch( bw )
     {
-    case LORA_BW_007:
+    case SX126X_LORA_BW_007:
         bandwidthInHz = 7812UL;
         break;
-    case LORA_BW_010:
+    case SX126X_LORA_BW_010:
         bandwidthInHz = 10417UL;
         break;
-    case LORA_BW_015:
+    case SX126X_LORA_BW_015:
         bandwidthInHz = 15625UL;
         break;
-    case LORA_BW_020:
+    case SX126X_LORA_BW_020:
         bandwidthInHz = 20833UL;
         break;
-    case LORA_BW_031:
+    case SX126X_LORA_BW_031:
         bandwidthInHz = 31250UL;
         break;
-    case LORA_BW_041:
+    case SX126X_LORA_BW_041:
         bandwidthInHz = 41667UL;
         break;
-    case LORA_BW_062:
+    case SX126X_LORA_BW_062:
         bandwidthInHz = 62500UL;
         break;
-    case LORA_BW_125:
+    case SX126X_LORA_BW_125:
         bandwidthInHz = 125000UL;
         break;
-    case LORA_BW_250:
+    case SX126X_LORA_BW_250:
         bandwidthInHz = 250000UL;
         break;
-    case LORA_BW_500:
+    case SX126X_LORA_BW_500:
         bandwidthInHz = 500000UL;
         break;
     }

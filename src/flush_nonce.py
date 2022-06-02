@@ -11,7 +11,7 @@ def execute(sql):
             host="localhost",
             database="chirpstack_ns",
             user="chirpstack_ns",
-            password="labsclabsc")
+            password="labsc")
 		
         # create a cursor
         cur = conn.cursor()

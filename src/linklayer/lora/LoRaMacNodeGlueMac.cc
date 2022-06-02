@@ -51,7 +51,7 @@
 #include "../../common/labscim_loramac_setup.h"
 #include "../../common/labscim_log.h"
 #include "../../common/labscim_socket.h"
-#include "../../common/sx126x_labscim.h"
+#include "../../common/labscim_sx126x.h"
 #include "../../common/cLabscimSignal.h"
 #include "../../physicallayer/lora/packetlevel/LoRaTags_m.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadioControlInfo_m.h"
@@ -403,15 +403,23 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
         free(cmd);
         break;
     }
+    case LORA_RADIO_SET_POWER:
+    {
+        struct lora_set_power* sp = (struct lora_set_power*)cmd->radio_struct;
+        auto configureCommand = new ConfigureLoRaRadioCommand();
+        configureCommand->setPower(mW(dBmW2mW(sp->Power_dbm)));
+        free(cmd);
+        configureRadio(configureCommand);
+        break;
+    }
     case LORA_RADIO_SET_MODULATION_PARAMS:
     {
         struct lora_set_modulation_params* mp = (struct lora_set_modulation_params*)cmd->radio_struct;
         auto configureCommand = new ConfigureLoRaRadioCommand();
-        configureCommand->setPower(mW(dBmW2mW(mp->TransmitPower_dBm)));
-        configureCommand->setLoRaSF(mp->ModulationParams.Params.LoRa.SpreadingFactor);
-        configureCommand->setLoRaCR(mp->ModulationParams.Params.LoRa.CodingRate);
-        configureCommand->setLowDataRate_optimization(mp->ModulationParams.Params.LoRa.LowDatarateOptimize);
-        configureCommand->setBandwidth(Hz(labscim::physicallayer::LoRaDimensionalTransmitter::RadioGetLoRaBandwidthInHz(mp->ModulationParams.Params.LoRa.Bandwidth)));
+        configureCommand->setLoRaSF(mp->ModulationParams.sf);
+        configureCommand->setLoRaCR(mp->ModulationParams.cr);
+        configureCommand->setLowDataRate_optimization(mp->ModulationParams.ldro);
+        configureCommand->setBandwidth(Hz(labscim::physicallayer::LoRaDimensionalTransmitter::RadioGetLoRaBandwidthInHz(mp->ModulationParams.bw)));
         free(cmd);
         configureRadio(configureCommand);
         break;
@@ -420,10 +428,10 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
     {
         struct lora_set_packet_params* pp = (struct lora_set_packet_params*)cmd->radio_struct;
         auto configureCommand = new ConfigureLoRaRadioCommand();
-        configureCommand->setHeader_enabled(pp->PacketParams.Params.LoRa.HeaderType);
-        configureCommand->setPayload_length(pp->PacketParams.Params.LoRa.PayloadLength);
-        configureCommand->setCRC_enabled(pp->PacketParams.Params.LoRa.CrcMode);
-        configureCommand->setPreamble_length(pp->PacketParams.Params.LoRa.PreambleLength);
+        configureCommand->setHeader_enabled(pp->PacketParams.header_type);
+        configureCommand->setPayload_length(pp->PacketParams.pld_len_in_bytes);
+        configureCommand->setCRC_enabled(pp->PacketParams.crc_is_on);
+        configureCommand->setPreamble_length(pp->PacketParams.preamble_len_in_symb);
         free(cmd);
         configureRadio(configureCommand);
         break;
@@ -503,7 +511,7 @@ cMessage* LoRaMacNodeGlueMac::GetScheduledTimeEvent(uint32_t sequence_number)
             }
         }
     }
-    EV_ERROR << "Could not find timer";
+    //EV_ERROR << "Could not find timer";
     return nullptr;
 }
 
@@ -604,7 +612,7 @@ void LoRaMacNodeGlueMac::ProcessCommands()
                         sprintf(log,"seq%4d\tCANCEL_TIME_EVENT, event %d, NOT FOUND, %s\n",hdr->sequence_number, cte->cancel_sequence_number, mNodeName);
 #endif
 
-                        EV_ERROR << "Nullptr on cancel time event";
+                        //EV_ERROR << "Nullptr on cancel time event";
                     }
                     free(cte);
                     break;
@@ -738,11 +746,12 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
         hash.Final(digest);
         memcpy(setup_msg.AppKey, digest, 32);
         setup_msg.output_logs = par("OutputLogs").boolValue()?1:0;
-        setup_msg.IsMaster = par("IsMaster").boolValue()?1:0;
         //EV_DETAIL << "Boot Message." << endl;
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
         interfaceEntry->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
         setup_msg.startup_time = (uint64_t)(simTime().dbl() * 1000000);
+        setup_msg.ResquestDownstream = par("RequestDownstream").boolValue()?1:0;
+        setup_msg.PacketGenerationRate = par("PacketGenerationRate").doubleValue();
         if(gTimeReference == 0)
         {
             struct timeval tv;

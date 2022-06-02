@@ -56,7 +56,7 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
         
         @statistic[TSCHDownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
         @statistic[TSCHDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
-        @statistic[TSCHDownstreamAoIArea](record=histogram,vector?; interpolationmode=none);
+        @statistic[TSCHDownstreamAoIArea](record=histogram,sum,vector?; interpolationmode=none);
         
         @statistic[radioOffTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
         @statistic[radioSleepTimeChanged](record=last,vector?; interpolationmode=sample-hold);        

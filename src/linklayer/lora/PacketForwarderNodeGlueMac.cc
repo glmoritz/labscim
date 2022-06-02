@@ -50,7 +50,6 @@
 #include "../../common/lora_gateway_setup.h"
 #include "../../common/labscim_log.h"
 #include "../../common/labscim_socket.h"
-#include "../../common/sx126x_labscim.h"
 #include "../../physicallayer/lora/packetlevel/LoRaTags_m.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadioControlInfo_m.h"
 #include "../../physicallayer/lora/packetlevel/LoRaDimensionalTransmitter.h"
@@ -388,15 +387,24 @@ void PacketForwarderNodeGlueMac::PerformRadioCommand(struct labscim_radio_comman
         free(cmd);
         break;
     }
+
+    case LORA_RADIO_SET_POWER:
+    {
+        struct lora_set_power* sp = (struct lora_set_power*)cmd->radio_struct;
+        auto configureCommand = new ConfigureLoRaRadioCommand();
+        configureCommand->setPower(mW(dBmW2mW(sp->Power_dbm)));
+        free(cmd);
+        configureRadio(configureCommand);
+        break;
+    }
     case LORA_RADIO_SET_MODULATION_PARAMS:
     {
         struct lora_set_modulation_params* mp = (struct lora_set_modulation_params*)cmd->radio_struct;
         auto configureCommand = new ConfigureLoRaRadioCommand();
-        configureCommand->setPower(mW(dBmW2mW(mp->TransmitPower_dBm)));
-        configureCommand->setLoRaSF(mp->ModulationParams.Params.LoRa.SpreadingFactor);
-        configureCommand->setLoRaCR(mp->ModulationParams.Params.LoRa.CodingRate);
-        configureCommand->setLowDataRate_optimization(mp->ModulationParams.Params.LoRa.LowDatarateOptimize);
-        configureCommand->setBandwidth(Hz(mp->ModulationParams.Params.LoRa.Bandwidth));
+        configureCommand->setLoRaSF(mp->ModulationParams.sf);
+        configureCommand->setLoRaCR(mp->ModulationParams.cr);
+        configureCommand->setLowDataRate_optimization(mp->ModulationParams.ldro);
+        configureCommand->setBandwidth(Hz(1600000UL));
         free(cmd);
         configureRadio(configureCommand);
         break;
@@ -405,10 +413,10 @@ void PacketForwarderNodeGlueMac::PerformRadioCommand(struct labscim_radio_comman
     {
         struct lora_set_packet_params* pp = (struct lora_set_packet_params*)cmd->radio_struct;
         auto configureCommand = new ConfigureLoRaRadioCommand();
-        configureCommand->setHeader_enabled(pp->PacketParams.Params.LoRa.HeaderType);
-        configureCommand->setPayload_length(pp->PacketParams.Params.LoRa.PayloadLength);
-        configureCommand->setCRC_enabled(pp->PacketParams.Params.LoRa.CrcMode);
-        configureCommand->setPreamble_length(pp->PacketParams.Params.LoRa.PreambleLength);
+        configureCommand->setHeader_enabled(pp->PacketParams.header_type);
+        configureCommand->setPayload_length(pp->PacketParams.pld_len_in_bytes);
+        configureCommand->setCRC_enabled(pp->PacketParams.crc_is_on);
+        configureCommand->setPreamble_length(pp->PacketParams.preamble_len_in_symb);
         free(cmd);
         configureRadio(configureCommand);
         break;

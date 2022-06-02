@@ -22,7 +22,7 @@
 #include "inet/physicallayer/base/packetlevel/DimensionalTransmitterBase.h"
 #include "inet/physicallayer/base/packetlevel/FlatTransmitterBase.h"
 
-#include "../../../common/sx126x_labscim.h"
+#include "../../../common/labscim_sx126x.h"
 
 using namespace inet;
 using namespace inet::physicallayer;
@@ -30,8 +30,6 @@ using namespace inet::physicallayer;
 namespace labscim {
 
 namespace physicallayer {
-
-const RadioLoRaBandwidths_t Bandwidths[] = {LORA_BW_125, LORA_BW_250, LORA_BW_500};
 
 typedef enum
 {
@@ -77,7 +75,7 @@ class INET_API LoRaDimensionalTransmitter : public FlatTransmitterBase, public D
     virtual bps getPacketDataRate() const;
 
     simtime_t getPacketRadioTimeOnAir( const Packet *packet );
-    static uint32_t RadioGetLoRaBandwidthInHz( RadioLoRaBandwidths_t bw );
+    static uint32_t RadioGetLoRaBandwidthInHz( sx126x_lora_bw_e bw );
 
   protected:
 
