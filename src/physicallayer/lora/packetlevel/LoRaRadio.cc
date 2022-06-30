@@ -28,6 +28,8 @@
 #include "LoRaDimensionalTransmitter.h"
 #include "LoRaDimensionalReceiver.h"
 #include "LoRaRadioControlInfo_m.h"
+#include "../../../common/labscim_sx126x.h"
+#include "LoRaFHSSHopEntry.h"
 
 using namespace inet;
 using namespace inet::physicallayer;
@@ -53,13 +55,51 @@ void LoRaRadio::initialize(int stage)
         LoRaSF = par("LoRaSF");
         LoRaCR = par("LoRaCR");
         iAmGateway = par("iAmGateway");
-
         LoRaTransmitter = check_and_cast<LoRaDimensionalTransmitter *>(getSubmodule("transmitter"));
         LoRaTransmitter->setIamGateway(iAmGateway);
         LoRaReceiver = check_and_cast<LoRaDimensionalReceiver *>(getSubmodule("receiver"));
         LoRaReceiver->setIamGateway(iAmGateway);
     }
 }
+
+void LoRaRadio::setLoRaModulationMode(sx126x_pkt_types_e mode)
+{
+    LoRaTransmitter->setLoRaModulationMode(mode);
+}
+
+sx126x_pkt_types_e LoRaRadio::getLoRaModulationMode()
+{
+    return LoRaTransmitter->getLoRaModulationMode();
+}
+
+Hz LoRaRadio::FHSSBandwidthToHz(lr_fhss_v1_bw_t bw)
+{
+    switch(bw)
+    {
+    case LR_FHSS_V1_BW_39063_HZ:
+        return Hz(39063);
+    case LR_FHSS_V1_BW_85938_HZ:
+        return Hz(85938);
+    case LR_FHSS_V1_BW_136719_HZ:
+        return Hz(136719);
+    case LR_FHSS_V1_BW_183594_HZ:
+        return Hz(183594);
+    case LR_FHSS_V1_BW_335938_HZ:
+        return Hz(335938);
+    case LR_FHSS_V1_BW_386719_HZ:
+        return Hz(386719);
+    case LR_FHSS_V1_BW_722656_HZ:
+        return Hz(722656);
+    case LR_FHSS_V1_BW_773438_HZ:
+        return Hz(773438);
+    case LR_FHSS_V1_BW_1523438_HZ:
+        return Hz(1523438);
+    case LR_FHSS_V1_BW_1574219_HZ:
+    default:
+        return Hz(1574219);
+    }
+}
+
 
 void LoRaRadio::handleUpperCommand(cMessage *message)
 {
@@ -88,6 +128,34 @@ void LoRaRadio::handleUpperCommand(cMessage *message)
                     datarate_changed = true;
                 }
             }
+
+            if (configureCommand->getFHSSCR() != -1)
+            {
+                if(getFHSSCR()!=configureCommand->getFHSSCR())
+                {
+                    setFHSSCR((lr_fhss_v1_cr_t)configureCommand->getFHSSCR());
+                    //datarate_changed = true; //we should set, but we are not setting by now
+                }
+            }
+
+            if (configureCommand->getFHSSBW() != -1)
+            {
+                if(LoRaTransmitter->getFHSSBW()!=configureCommand->getFHSSBW())
+                {
+                    LoRaTransmitter->setFHSSBW((lr_fhss_v1_bw_t)configureCommand->getFHSSBW());
+                    //datarate_changed = true; //we should set, but we are not setting by now
+                }
+                configureCommand->setBandwidth(FHSSBandwidthToHz((lr_fhss_v1_bw_t)configureCommand->getFHSSBW()));
+            }
+
+            if (configureCommand->getFHSSGrid() != -1)
+            {
+                if(LoRaTransmitter->getFHSSGrid()!=configureCommand->getFHSSGrid())
+                {
+                    LoRaTransmitter->setFHSSGrid((lr_fhss_v1_grid_t)configureCommand->getFHSSGrid());
+                }
+            }
+
 
             NarrowbandTransmitterBase *narrowbandTransmitter = const_cast<NarrowbandTransmitterBase *>(check_and_cast<const NarrowbandTransmitterBase *>(transmitter));
 
@@ -128,7 +196,10 @@ bool LoRaRadio::compareArrivals(cMessage* i1, cMessage* i2)
     return (i1->getArrivalTime() < i2->getArrivalTime());
 }
 
-
+void LoRaRadio::setHoppingSequence(std::vector<LoRaFHSSHopEntry>& HopTable)
+{
+        LoRaTransmitter->setHoppingSequence(HopTable);
+}
 
 void LoRaRadio::startReception(cMessage *timer, IRadioSignal::SignalPart part)
 {
@@ -310,6 +381,19 @@ void LoRaRadio::setLoRaCR(int LoRaCR)
     if(!mConfiguringRadio)
         emit(loraradio_datarate_changed, LoRaTransmitter->getPacketDataRate().get());
 }
+
+void LoRaRadio::setFHSSCR(lr_fhss_v1_cr_t FHSSCR)
+{
+    LoRaTransmitter->setFHSSCR(FHSSCR);
+    //if(!mConfiguringRadio) //TODO: how this can work for FHSS?
+    //    emit(loraradio_datarate_changed, LoRaTransmitter->getPacketDataRate().get());
+}
+
+lr_fhss_v1_cr_t LoRaRadio::getFHSSCR() const
+{
+    return LoRaTransmitter->getFHSSCR();
+}
+
 
 bps LoRaRadio::getPacketDataRate(const Packet *packet) const
 {

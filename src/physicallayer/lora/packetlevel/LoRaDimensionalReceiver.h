@@ -22,6 +22,7 @@
 #include "inet/physicallayer/base/packetlevel/FlatReceiverBase.h"
 #include "LoRaDimensionalReception.h"
 #include "inet/common/Units.h"
+#include "../../../common/lr_fhss_v1_base_types.h"
 
 
 using namespace inet;

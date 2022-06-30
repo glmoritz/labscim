@@ -26,3 +26,10 @@ class LoRaParamsInd extends LoRaParamsTagBase
 class LoRaParamsReq extends LoRaParamsTagBase
 {
 }
+
+class LoRaFHSSParamsInd extends TagBase
+{
+    int HPW = -1;        
+    int FHSSCR = -1;
+    int FHSSBW = -1;
+}

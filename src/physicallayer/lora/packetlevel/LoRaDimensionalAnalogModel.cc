@@ -29,6 +29,8 @@
 #include "LoRaDimensionalNoise.h"
 #include "LoRaBandListening.h"
 #include "LoRaDimensionalSnir.h"
+#include "LoRaDimensionalFHSSTransmission.h"
+#include "LoRaDimensionalFHSSSnir.h"
 
 using namespace inet;
 using namespace inet::physicallayer;
@@ -299,7 +301,8 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
         {
             //non-lora interference on lora noise
             const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRaPower = makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(dimensionalReception->getPower(), loradimensionalNoise->getNonLoRapower());
-            return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), loradimensionalReception->getCenterFrequency(), loradimensionalReception->getBandwidth(), loradimensionalNoise->getLoRapower(),NonLoRaPower,loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent, true);
+            auto dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+            return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), dimensionalReception->getCenterFrequency(), dimensionalReception->getBandwidth(), loradimensionalNoise->getLoRapower(),NonLoRaPower,loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent, true);
         }
     }
     else
@@ -319,15 +322,18 @@ const ISnir *LoRaDimensionalAnalogModel::computeSNIR(const IReception *reception
         {
             return new LoRaDimensionalSnir(loradimensionalReception, loradimensionalNoise);
         }
-        else
-        {
-            return DimensionalAnalogModel::computeSNIR(reception, noise);
-        }
     }
     else
     {
-        return DimensionalAnalogModel::computeSNIR(reception, noise);
+        const auto loraFHSStransmission = dynamic_cast<const LoRaDimensionalFHSSTransmission *>(reception->getTransmission());
+        if(loraFHSStransmission)
+        {
+            auto dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+            auto dimensionalNoise = check_and_cast<const DimensionalNoise *>(noise);
+            return new LoRaDimensionalFHSSSnir(dimensionalReception, dimensionalNoise);
+        }
     }
+    return DimensionalAnalogModel::computeSNIR(reception, noise);
 }
 
 

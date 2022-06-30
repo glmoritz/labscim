@@ -18,9 +18,12 @@
 
 #include <omnetpp.h>
 #include "inet/common/INETDefs.h"
+#include "inet/physicallayer/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/base/packetlevel/FlatRadioBase.h"
+#include "inet/physicallayer/common/packetlevel/PowerFunctions.h"
+#include "inet/physicallayer/contract/packetlevel/IRadioMedium.h"
 #include <iostream>
 #include <fstream>
-
 using namespace std;
 using namespace inet;
 //using namespace inet::physicallayer;
@@ -34,6 +37,12 @@ class LabscimRadioRecorder : public cSimpleModule, public cListener
     private:
         bool LogEnabled;
         ofstream LogFile;
+        ofstream SpectrumFile;
+        inet::physicallayer::FlatRadioBase *SpectrumRadioReceiver = nullptr;
+        math::SummedFunction<WpHz, math::Domain<simsec, Hz>> spectrumPower;
+        WpHz mSpectrumRecorderUpperThreshold;
+        WpHz mSpectrumRecorderLowerThreshold;
+
 
     protected:
         // The following redefined virtual function holds the algorithm.
@@ -43,6 +52,15 @@ class LabscimRadioRecorder : public cSimpleModule, public cListener
         virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details) override;
 
         virtual int numInitStages() const override { return NUM_INIT_STAGES; }
+
+        virtual void writeConstantValue(double x1, double x2, double y1, double y2, double v) ;
+
+        virtual void writeLinearValue(double x1, double x2, double y1, double y2, double vl, double vu, int axis) ;
+
+        virtual void writeBilinearValue(double x1, double x2, double y1, double y2, double v11, double v21, double v12, double v22) ;
+
+        virtual void writeConstantPowerValue(double tstart, double tend, double centerfrequency, double bandwidth, double power);
+
 
     public:
         virtual ~LabscimRadioRecorder();

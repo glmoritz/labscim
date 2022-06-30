@@ -800,6 +800,19 @@ void PacketForwarderNodeGlueMac::handleLowerPacket(Packet *packet)
         payload->LoRaSF = 0;
     }
 
+    if (packet->findTag<LoRaFHSSParamsInd>() != nullptr) {
+        auto lfi = packet->getTag<LoRaFHSSParamsInd>();
+        payload->HPW = lfi->getHPW();
+        payload->FHSSCR = lfi->getFHSSCR();
+        payload->FHSSBW = lfi->getFHSSBW();
+    }
+    else
+    {
+        payload->HPW = -1;
+        payload->FHSSCR = -1;
+        payload->FHSSBW = -1;
+    }
+
     if (packet->findTag<SignalBandInd>() != nullptr) {
         auto signalBandInd = packet->getTag<SignalBandInd>();
         payload->CenterFrequency_Hz = signalBandInd->getCenterFrequency().get();
@@ -834,33 +847,6 @@ void PacketForwarderNodeGlueMac::handleLowerPacket(Packet *packet)
         payload->SNR_db = -200.0;
     }
 
-    if (packet->findTag<LoRaParamsInd>() != nullptr)
-    {
-        auto loraind = packet->getTag<LoRaParamsInd>();
-        payload->LoRaSF = loraind->getLoRaSF();
-        payload->LoRaCR = loraind->getLoRaCR();
-    }
-    else
-    {
-        //something wrong
-        payload->LoRaSF = 0;
-        payload->LoRaCR = 0;
-    }
-
-
-    if (packet->findTag<SignalBandInd>() != nullptr)
-    {
-        auto bandind = packet->getTag<SignalBandInd>();
-        payload->CenterFrequency_Hz = (uint32_t)bandind->getCenterFrequency().get();
-        payload->LoRaBandwidth_Hz = (uint32_t)bandind->getBandwidth().get();
-    }
-    else
-    {
-        //something wrong
-        payload->CenterFrequency_Hz = 0;
-        payload->LoRaBandwidth_Hz = 0;
-    }
-
     delete packet;
 #ifdef LABSCIM_LOG_COMMANDS
     std::stringstream stream;
@@ -873,9 +859,6 @@ void PacketForwarderNodeGlueMac::handleLowerPacket(Packet *packet)
         // lora gateway radio is always listening
         radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
     }
-
-
-
 
     //dispatch packet to LoRaMAC upper layers
     SendRadioResponse(LORA_RADIO_PACKET_RECEIVED, (uint64_t)std::round((simTime().dbl() * 1000000)),(void*)payload, FIXED_SIZEOF_LORA_RADIO_PAYLOAD + message_size, 0);

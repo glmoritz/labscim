@@ -37,6 +37,8 @@
 #include "../../common/labscim-contiki-radio-protocol.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadioControlInfo_m.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadio.h"
+#include "../../common/labscim_sx126x.h"
+#include "../../common/lr_fhss_v1_base_types.h"
 
 using namespace inet;
 using namespace labscim;
@@ -99,6 +101,7 @@ public:
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details) override;
 
 protected:
+
     std::string mNodeName;
 
     uint32_t nbBufferSize;

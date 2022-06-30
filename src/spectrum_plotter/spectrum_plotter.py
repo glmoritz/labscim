@@ -1,6 +1,7 @@
 # Import the necessary packages and modules
 from os import minor
 import sys
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
@@ -111,6 +112,8 @@ class Spectrum:
         self.tx_patches = []
         self.tx_correct_patches = []        
         self.listen_patches = []   
+        self.power_patches = []   
+        self.power_values = []   
         self.max = -1
         self.min = -1     
 
@@ -141,6 +144,12 @@ class Spectrum:
         self.update_range(center_frequency_hz,bandwidth_hz)    
         p = Rectangle((start_t,center_frequency_hz - (bandwidth_hz/2)),end_t - start_t,bandwidth_hz)
         self.tx_correct_patches.append(p)
+
+    def AddPowerPatch(self, start_t, end_t, center_frequency_hz, bandwidth_hz, power):
+        self.update_range(center_frequency_hz,bandwidth_hz)    
+        p = Rectangle((start_t,center_frequency_hz - (bandwidth_hz/2)),end_t - start_t,bandwidth_hz)
+        self.power_patches.append(p)
+        self.power_values.append(power)
     
 
 
@@ -204,10 +213,23 @@ for line in Lines:
 
     print("Line{}: {}".format(count, line.strip()))
 
+
+file2 = open(sys.argv[2], 'r')
+Lines = file2.readlines()
+count = 0
+
+for line in Lines:
+    count += 1
+    data = line.split(",")    
+
+    if data[0].strip() == "POW":
+        specgram.AddPowerPatch(float(data[1]),float(data[2]),float(data[3]),float(data[4]),float(data[5]))        
+
+    print("Line{}: {}".format(count, line.strip()))
+
+
 #fig, ax = plt.subplots(2)
 fig, ax = plt.subplots(nrows=2, sharex=True, sharey=False)
-
-
 
 
 #ax.plot([0, 20],[900000, 900000])
@@ -272,9 +294,16 @@ ax[0].grid(which='major', color='#666666', linestyle='-')
 ax[0].grid(which='minor', color='#333333', linestyle='--')
 
 
-pc = PatchCollection(specgram.tx_patches, facecolor='r', alpha=0.5, edgecolor='None')
+pc = PatchCollection(specgram.power_patches, cmap=matplotlib.cm.jet, alpha=0.5, edgecolor='None')
+colors = 100*np.random.random(65)
+norm_power = specgram.power_values/np.linalg.norm(specgram.power_values)
+pc.set_array(np.array(specgram.power_values))
+#pc.set_array(colors)
 # Add collection to axes
 ax[0].add_collection(pc)
+cb = fig.colorbar(pc, ax=ax[0], fraction=0.02)
+cb.ax.set_title('dBmW / MHz')
+fig.colorbar(pc, ax=ax[1], fraction=0.02)
 
 pc = PatchCollection(specgram.tx_correct_patches, facecolor='None', alpha=0.5, edgecolor='k')
 # Add collection to axes

@@ -58,6 +58,8 @@
 #include "../../physicallayer/lora/packetlevel/LoRaDimensionalTransmitter.h"
 #include "../../physicallayer/lora/packetlevel/LoRaDimensionalReceiver.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadio.h"
+#include "../../physicallayer/lora/packetlevel/LoRaFHSSHopEntry.h"
+
 
 using namespace inet::physicallayer;
 using namespace omnetpp;
@@ -294,6 +296,8 @@ void LoRaMacNodeGlueMac::configureRadio(Hz CenterFrequency, Hz Bandwidth, W Powe
 
 void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
 {
+
+    //FREQ_STEP_SX1261_2 = 0.95367431640625
     switch(cmd->radio_command)
     {
     case LORA_RADIO_SEND:
@@ -396,10 +400,7 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
             mRadioConfigured = true;
             radioModule->subscribe(IRadio::receptionStateChangedSignal, this);
         }
-        if(modem_type->Modem!=1)
-        {
-            throw cRuntimeError("Only LoRa Modulation is Supported by this module");
-        }
+        mLoRaRadio->setLoRaModulationMode((sx126x_pkt_types_e)modem_type->Modem);
         free(cmd);
         break;
     }
@@ -432,6 +433,19 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
         configureCommand->setPayload_length(pp->PacketParams.pld_len_in_bytes);
         configureCommand->setCRC_enabled(pp->PacketParams.crc_is_on);
         configureCommand->setPreamble_length(pp->PacketParams.preamble_len_in_symb);
+        free(cmd);
+        configureRadio(configureCommand);
+        break;
+    }
+    case LORA_RADIO_SET_FHSS_PARAMS:
+    {
+        struct lora_set_fhss_params* fp = (struct lora_set_fhss_params*)cmd->radio_struct;
+        auto configureCommand = new ConfigureLoRaRadioCommand();
+        configureCommand->setCenterFrequency(Hz(fp->FHSSParams.center_freq_in_pll_steps*labscim::physicallayer::PLL_STEP_IN_HZ));
+        configureCommand->setFHSSBW(fp->FHSSParams.lr_fhss_params.bw);
+        configureCommand->setFHSSCR(fp->FHSSParams.lr_fhss_params.cr);
+        configureCommand->setFHSSGrid(fp->FHSSParams.lr_fhss_params.grid);
+
         free(cmd);
         configureRadio(configureCommand);
         break;
@@ -487,6 +501,19 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
         configureCommand->setCenterFrequency(Hz(lsf->Frequency_Hz));
         free(cmd);
         configureRadio(configureCommand);
+        break;
+    }
+    case LORA_RADIO_SET_HOPPING:
+    {
+        struct lora_set_hopping* lsh =  (struct lora_set_hopping*)cmd->radio_struct;
+        std::vector<labscim::physicallayer::LoRaFHSSHopEntry> Hops;
+        for(uint32_t i=0;i < lsh->num_hops;i++)
+        {
+            Hops.push_back(labscim::physicallayer::LoRaFHSSHopEntry(lsh->hops[i].nb_symbols, lsh->hops[i].freq_in_pll_steps,lsh->num_headers>i));
+        }
+
+        mLoRaRadio->setHoppingSequence(Hops);
+        free(cmd);
         break;
     }
     default:
