@@ -23,6 +23,7 @@
 //**************************************************************************/
 
 package labscim.linklayer.ieee802154e;
+
 import inet.queueing.contract.IPacketQueue;
 import inet.linklayer.base.MacProtocolBase;
 import inet.linklayer.contract.IMacProtocol;
@@ -34,7 +35,7 @@ import inet.linklayer.contract.IMacProtocol;
 // constant, linear or exponential backoff times.
 //
 module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
-{
+{                                 
     parameters:
         
         @statistic[TSCHUpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
@@ -67,7 +68,7 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
         
         int SocketBufferSize = default(1024); //the buffer size for socket connection with contiking instance
         
-        volatile double BootTime @unit(s) = default(0); //time to boot up the node 
+        volatile double BootTime @unit(s) = default(0 s); //time to boot up the node 
                 
         string address = default("auto"); // MAC address as hex string (12 hex digits), or
                                           // "auto". "auto" values will be replaced by

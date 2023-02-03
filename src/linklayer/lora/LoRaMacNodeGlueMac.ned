@@ -65,7 +65,7 @@ module LoRaMacNodeGlueMac extends MacProtocolBase like IMacProtocol
         
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
         
-        volatile double BootTime @unit(s) = default(0); //time to boot up the node 
+        volatile double BootTime @unit(s) = default(0 s); //time to boot up the node 
                 
         string address = default("auto"); // MAC address as hex string (12 hex digits), or
                                           // "auto". "auto" values will be replaced by

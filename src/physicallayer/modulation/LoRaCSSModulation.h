@@ -18,7 +18,7 @@
 #ifndef __LABSCIM_LORACSSDULATION_H
 #define __LABSCIM_LORACSSDULATION_H
 
-#include "inet/physicallayer/contract/packetlevel/IModulation.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IModulation.h"
 
 using namespace inet;
 using namespace inet::physicallayer;
@@ -36,7 +36,7 @@ class INET_API LoRaCSSModulation : public IModulation
   public:
     LoRaCSSModulation(unsigned int codeWordSize);
 
-    virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
+    virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;
 
     virtual double calculateBER(double snir, Hz bandwidth, bps bitrate) const override;
     virtual double calculateSER(double snir, Hz bandwidth, bps bitrate) const override;

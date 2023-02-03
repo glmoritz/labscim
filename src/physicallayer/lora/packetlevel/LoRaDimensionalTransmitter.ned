@@ -18,7 +18,7 @@
 
 package labscim.physicallayer.lora.packetlevel;
 
-import inet.physicallayer.base.packetlevel.DimensionalTransmitterBase;
+import inet.physicallayer.wireless.common.base.packetlevel.DimensionalTransmitterBase;
 
 //
 // Some example values for the frequencyGains parameter:

@@ -18,9 +18,9 @@
 #ifndef __LABSCIM_LORADIMENSIONALSNIR_H
 #define __LABSCIM_LORADIMENSIONALSNIR_H
 
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalNoise.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalReception.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalSnir.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalNoise.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalSnir.h"
 #include "LoRaDimensionalReception.h"
 #include "LoRaDimensionalNoise.h"
 
@@ -51,7 +51,7 @@ class INET_API LoRaDimensionalSnir : public DimensionalSnir
   public:
     LoRaDimensionalSnir(const LoRaDimensionalReception *reception, const LoRaDimensionalNoise *noise);
 
-    virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
+    virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;
 
     virtual double getMinLoRa(int LoRaSF) const;
     virtual double getMaxLoRa(int LoRaSF) const;

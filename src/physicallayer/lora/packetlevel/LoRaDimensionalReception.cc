@@ -16,7 +16,7 @@
 //
 
 #include "LoRaDimensionalReception.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalReception.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
 
 namespace labscim {
 

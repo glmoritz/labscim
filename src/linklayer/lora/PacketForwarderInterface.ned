@@ -19,20 +19,20 @@
 //package labscim.linklayer.ContikiNG_IEEE802154;1
 
 import inet.linklayer.contract.IWirelessInterface;
-import inet.networklayer.common.InterfaceEntry;
-import inet.physicallayer.contract.packetlevel.IRadio;
+import inet.networklayer.common.NetworkInterface;
+import inet.physicallayer.wireless.common.contract.packetlevel.IRadio;
 import labscim.linklayer.lora.PacketForwarderNodeGlueMac;
 package labscim.linklayer.lora;
 
 
-module PacketForwarderInterface extends InterfaceEntry like IWirelessInterface
+module PacketForwarderInterface extends NetworkInterface like IWirelessInterface
 {
     parameters:
-        @class(inet::InterfaceEntry);
+        @class(inet::NetworkInterface);
         string interfaceTableModule;
         string energySourceModule = default("^.energyStorage");
-        *.interfaceTableModule = default(absPath(interfaceTableModule));
-        *.energySourceModule = default(absPath(energySourceModule));
+        *.interfaceTableModule = default(absPath(this.interfaceTableModule));
+        *.energySourceModule = default(absPath(this.energySourceModule));
         @display("i=block/ifcard");
     gates:
         input upperLayerIn;

@@ -15,13 +15,13 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalAnalogModel.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalNoise.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalReception.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalSnir.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalTransmission.h"
-#include "inet/physicallayer/common/packetlevel/BandListening.h"
-#include "inet/physicallayer/contract/packetlevel/IRadioMedium.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalAnalogModel.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalNoise.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalSnir.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
+#include "inet/physicallayer/wireless/common/radio/packetlevel/BandListening.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadioMedium.h"
 #include "inet/common/Units.h"
 #include "LoRaDimensionalAnalogModel.h"
 #include "LoRaDimensionalTransmission.h"
@@ -41,7 +41,7 @@ namespace physicallayer {
 
 Define_Module(LoRaDimensionalAnalogModel);
 
-std::ostream& LoRaDimensionalAnalogModel::printToStream(std::ostream& stream, int level) const
+std::ostream& LoRaDimensionalAnalogModel::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     stream << "LoRaDimensionalAnalogModel";
     return DimensionalAnalogModel::printToStream(stream, level);

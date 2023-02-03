@@ -18,7 +18,7 @@
 #ifndef __LABSCIM_LORADIMENSIONALANALOGMODEL_H
 #define __LABSCIM_LORADIMENSIONALANALOGMODEL_H
 
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalAnalogModel.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalAnalogModel.h"
 
 using namespace inet::physicallayer;
 
@@ -29,7 +29,7 @@ namespace physicallayer {
 class INET_API LoRaDimensionalAnalogModel : public DimensionalAnalogModel
 {
   public:
-    virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
+    virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;
 
     virtual const IReception *computeReception(const IRadio *radio, const ITransmission *transmission, const IArrival *arrival) const override;
 

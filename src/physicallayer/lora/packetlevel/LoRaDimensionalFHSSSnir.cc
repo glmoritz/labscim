@@ -15,7 +15,7 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalSnir.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalSnir.h"
 #include "LoRaDimensionalSnir.h"
 #include "LoRaDimensionalReception.h"
 #include "LoRaDimensionalNoise.h"
@@ -49,7 +49,7 @@ LoRaDimensionalFHSSSnir::LoRaDimensionalFHSSSnir(const DimensionalReception *rec
     }
 }
 
-std::ostream& LoRaDimensionalFHSSSnir::printToStream(std::ostream& stream, int level) const
+std::ostream& LoRaDimensionalFHSSSnir::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     stream << "LoRaDimensionalFHSSSnir";
 //    if (level <= PRINT_LEVEL_DETAIL)

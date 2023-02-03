@@ -19,8 +19,8 @@
 #ifndef __LABSCIM_LORADIMENSIONALTRANSMITTER_H
 #define __LABSCIM_LORADIMENSIONALTRANSMITTER_H
 
-#include "inet/physicallayer/base/packetlevel/DimensionalTransmitterBase.h"
-#include "inet/physicallayer/base/packetlevel/FlatTransmitterBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/DimensionalTransmitterBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatTransmitterBase.h"
 
 #include "../../../common/labscim_sx126x.h"
 #include "../../../common/lr_fhss_v1_base_types.h"
@@ -46,7 +46,7 @@ class INET_API LoRaDimensionalTransmitter : public FlatTransmitterBase, public D
 
     virtual void initialize(int stage) override;
 
-    virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
+    virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;
     virtual const ITransmission *createTransmission(const IRadio *radio, const Packet *packet, const simtime_t startTime) const override;
 
     virtual bool setIamGateway() const { return iAmGateway; }

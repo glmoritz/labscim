@@ -18,8 +18,8 @@
 #ifndef __LABSCIM_LORARADIO_H
 #define __LABSCIM_LORARADIO_H
 
-#include "inet/physicallayer/base/packetlevel/ApskModulationBase.h"
-#include "inet/physicallayer/base/packetlevel/FlatRadioBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/ApskModulationBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatRadioBase.h"
 #include "LoRaDimensionalReceiver.h"
 #include "LoRaDimensionalTransmitter.h"
 #include "../../../common/labscim_sx126x.h"

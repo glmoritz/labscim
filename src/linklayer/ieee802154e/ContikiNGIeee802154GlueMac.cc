@@ -41,8 +41,8 @@
 #include "inet/linklayer/common/MacAddressTag_m.h"
 #include "inet/linklayer/ieee802154/Ieee802154Mac.h"
 #include "inet/linklayer/ieee802154/Ieee802154MacHeader_m.h"
-#include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/SignalTag_m.h"
+#include "inet/networklayer/common/NetworkInterface.h" //#include "inet/networklayer/common/InterfaceEntry.h"
 #include "../../common/LabscimConnector.h"
 #include "../../common/labscim-contiki-radio-protocol.h"
 #include "../../common/labscim_log.h"
@@ -121,7 +121,7 @@ void ContikiNGIeee802154GlueMac::initialize(int stage)
         cMessage* BootMsg;
         std::string cmd("");
         std::stringstream stream;
-        stream << "node-" << std::hex << interfaceEntry->getMacAddress().getInt();
+        stream << "node-" << std::hex << networkInterface->getMacAddress().getInt();
         mNodeName = std::string(stream.str() );
         std::string MemoryName = std::string("labscim-") + mNodeName + std::string("-") + GenerateRandomString(16);
 
@@ -172,21 +172,21 @@ ContikiNGIeee802154GlueMac::~ContikiNGIeee802154GlueMac()
     }
 }
 
-void ContikiNGIeee802154GlueMac::configureInterfaceEntry()
+void ContikiNGIeee802154GlueMac::configureNetworkInterface()
 {
     MacAddress address = parseMacAddressParameter(par("address"));
 
     // data rate
-    interfaceEntry->setDatarate(mCurrentBitrate.get());
+    networkInterface->setDatarate(mCurrentBitrate.get());
 
     // generate a link-layer address to be used as interface token for IPv6
-    interfaceEntry->setMacAddress(address);
-    interfaceEntry->setInterfaceToken(address.formInterfaceIdentifier());
+    networkInterface->setMacAddress(address);
+    networkInterface->setInterfaceToken(address.formInterfaceIdentifier());
 
     // capabilities
-    interfaceEntry->setMtu(par("mtu"));
-    interfaceEntry->setMulticast(true);
-    interfaceEntry->setBroadcast(true);
+    networkInterface->setMtu(par("mtu"));
+    networkInterface->setMulticast(true);
+    networkInterface->setBroadcast(true);
 }
 
 /**
@@ -645,7 +645,7 @@ void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
 
         //EV_DETAIL << "Boot Message." << endl;
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
-        interfaceEntry->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
+        networkInterface->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
         setup_msg.startup_time = (uint64_t)(simTime().dbl() * 1000000);
 #ifdef LABSCIM_LOG_COMMANDS
         std::stringstream stream;

@@ -31,7 +31,7 @@
 #include "inet/linklayer/base/MacProtocolBase.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/contract/IMacProtocol.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
 #include "../../common/LabscimConnector.h"
 #include "../../common/labscim_contiking_setup.h"
 #include "../../common/labscim-contiki-radio-protocol.h"
@@ -176,7 +176,7 @@ protected:
 
 protected:
     /** @brief Generate new interface address*/
-    virtual void configureInterfaceEntry() override;
+    virtual void configureNetworkInterface() override;
     virtual void handleCommand(cMessage *msg) {}
 
     void PerformRadioCommand(struct labscim_radio_command* cmd);

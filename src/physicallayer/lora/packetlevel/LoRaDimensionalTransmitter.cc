@@ -17,8 +17,8 @@
 //
 
 #include "inet/mobility/contract/IMobility.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalTransmission.h"
-#include "inet/physicallayer/contract/packetlevel/RadioControlInfo_m.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/RadioControlInfo_m.h"
 #include "LoRaDimensionalTransmitter.h"
 #include "LoRaDimensionalTransmission.h"
 #include "LoRaDimensionalFHSSTransmission.h"
@@ -57,7 +57,7 @@ void LoRaDimensionalTransmitter::initialize(int stage)
     DimensionalTransmitterBase::initialize(stage);
 }
 
-std::ostream& LoRaDimensionalTransmitter::printToStream(std::ostream& stream, int level) const
+std::ostream& LoRaDimensionalTransmitter::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     stream << "LoRaDimensionalTransmitter";
     DimensionalTransmitterBase::printToStream(stream, level);

@@ -17,7 +17,7 @@
 
 package labscim.physicallayer.lora.packetlevel;
 
-import inet.physicallayer.contract.packetlevel.IAnalogModel;
+import inet.physicallayer.wireless.common.contract.packetlevel.IAnalogModel;
 
 //
 // This analog model computes with dimensional analog power representation. In

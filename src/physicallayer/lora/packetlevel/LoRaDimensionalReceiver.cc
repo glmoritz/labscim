@@ -29,8 +29,8 @@
 #include <fstream>
 
 
-#include "inet/physicallayer/common/packetlevel/ReceptionDecision.h"
-#include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
+#include "inet/physicallayer/wireless/common/radio/packetlevel/ReceptionDecision.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/SignalTag_m.h"
 #include "inet/common/math/Functions.h"
 #include "inet/common/Units.h"
 
@@ -66,7 +66,7 @@ void LoRaDimensionalReceiver::initialize(int stage)
     }
 }
 
-std::ostream& LoRaDimensionalReceiver::printToStream(std::ostream& stream, int level) const
+std::ostream& LoRaDimensionalReceiver::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     stream << "LoRaDimensionalReceiver. Gateway = " << iAmGateway << " LoRaSF =" << LoRaSF << ", ";
     return FlatReceiverBase::printToStream(stream, level);
@@ -458,7 +458,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionSuccessful(const IListening *lis
     return false; //not a lora nor a lora fhss transmission, don't know how the flow reached here
 }
 
-const IListening *LoRaDimensionalReceiver::createListening(const IRadio *radio, const simtime_t startTime, const simtime_t endTime, const Coord startPosition, const Coord endPosition) const
+const IListening *LoRaDimensionalReceiver::createListening(const IRadio *radio, const simtime_t startTime, const simtime_t endTime, const Coord& startPosition, const Coord& endPosition) const
 {
     return new LoRaBandListening(radio, startTime, endTime, startPosition, endPosition, centerFrequency, bandwidth, LoRaSF, iAmGateway);
 }

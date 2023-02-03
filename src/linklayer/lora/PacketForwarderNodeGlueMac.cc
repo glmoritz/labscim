@@ -41,8 +41,8 @@
 #include "inet/linklayer/common/MacAddressTag_m.h"
 #include "inet/linklayer/ieee802154/Ieee802154Mac.h"
 #include "inet/linklayer/ieee802154/Ieee802154MacHeader_m.h"
-#include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/SignalTag_m.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "inet/common/geometry/common/GeographicCoordinateSystem.h"
 #include "inet/mobility/base/MobilityBase.h"
 #include "../../common/LabscimConnector.h"
@@ -113,12 +113,12 @@ void PacketForwarderNodeGlueMac::initialize(int stage)
         cMessage* BootMsg;
         std::string cmd("");
         std::stringstream stream;
-        stream << "gateway-node-" << std::hex << interfaceEntry->getMacAddress().getInt();
+        stream << "gateway-node-" << std::hex << networkInterface->getMacAddress().getInt();
         mNodeName = std::string(stream.str() );
         std::string MemoryName = std::string("labscim-") + mNodeName + std::string("-") + GenerateRandomString(16);
 
         nbBufferSize = par("SocketBufferSize").intValue();
-        interfaceEntry->setDatarate(mLoRaRadio->getPacketDataRate().get());
+        networkInterface->setDatarate(mLoRaRadio->getPacketDataRate().get());
 
         if(!par("NodeDebug").boolValue())
         {
@@ -168,22 +168,22 @@ PacketForwarderNodeGlueMac::~PacketForwarderNodeGlueMac()
     }
 }
 
-void PacketForwarderNodeGlueMac::configureInterfaceEntry()
+void PacketForwarderNodeGlueMac::configureNetworkInterface()
 {
     MacAddress address = parseMacAddressParameter(par("address"));
 
     // data rate
     const double EstimatedDataRate =  5469; //SF7 @ 125kHz -> will be adjusted upon radio configuration
-    interfaceEntry->setDatarate(EstimatedDataRate);
+    networkInterface->setDatarate(EstimatedDataRate);
 
     // generate a link-layer address to be used as interface token for IPv6
-    interfaceEntry->setMacAddress(address);
-    interfaceEntry->setInterfaceToken(address.formInterfaceIdentifier());
+    networkInterface->setMacAddress(address);
+    networkInterface->setInterfaceToken(address.formInterfaceIdentifier());
 
     // capabilities
-    interfaceEntry->setMtu(par("mtu"));
-    interfaceEntry->setMulticast(true);
-    interfaceEntry->setBroadcast(true);
+    networkInterface->setMtu(par("mtu"));
+    networkInterface->setMulticast(true);
+    networkInterface->setBroadcast(true);
 }
 
 /**
@@ -678,7 +678,7 @@ void PacketForwarderNodeGlueMac::handleSelfMessage(cMessage *msg)
         setup_msg.output_logs = par("OutputLogs").boolValue()?1:0;
         //EV_DETAIL << "Boot Message." << endl;
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
-        interfaceEntry->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
+        networkInterface->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
         setup_msg.startup_time = (uint64_t)(simTime().dbl() * 1000000);
         if(gTimeReference == 0)
         {
@@ -870,7 +870,7 @@ void PacketForwarderNodeGlueMac::receiveSignal(cComponent *source, simsignal_t s
 {
     if(signalID == labscim::physicallayer::LoRaRadio::loraradio_datarate_changed)
     {
-        interfaceEntry->setDatarate(value);
+        networkInterface->setDatarate(value);
     }
 }
 

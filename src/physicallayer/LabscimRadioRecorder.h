@@ -18,10 +18,10 @@
 
 #include <omnetpp.h>
 #include "inet/common/INETDefs.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
-#include "inet/physicallayer/base/packetlevel/FlatRadioBase.h"
-#include "inet/physicallayer/common/packetlevel/PowerFunctions.h"
-#include "inet/physicallayer/contract/packetlevel/IRadioMedium.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatRadioBase.h"
+#include "inet/physicallayer/wireless/common/signal/PowerFunctions.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadioMedium.h"
 #include <iostream>
 #include <fstream>
 using namespace std;

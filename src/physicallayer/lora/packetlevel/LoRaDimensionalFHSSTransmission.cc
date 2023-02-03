@@ -15,7 +15,7 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalTransmission.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
 #include "inet/common/Units.h"
 #include "LoRaDimensionalFHSSTransmission.h"
 #include "../../../common/lr_fhss_v1_base_types.h"
@@ -37,7 +37,7 @@ LoRaDimensionalFHSSTransmission::LoRaDimensionalFHSSTransmission(const IRadio *t
 {
 }
 
-std::ostream& LoRaDimensionalFHSSTransmission::printToStream(std::ostream& stream, int level) const
+std::ostream& LoRaDimensionalFHSSTransmission::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     stream << "LoRaDimensionalFHSSTransmission";
     //if (level <= PRINT_LEVEL_DEBUG)

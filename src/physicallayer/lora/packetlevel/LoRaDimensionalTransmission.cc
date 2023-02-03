@@ -15,7 +15,7 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalTransmission.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
 #include "inet/common/Units.h"
 #include "LoRaDimensionalTransmission.h"
 
@@ -36,7 +36,7 @@ LoRaDimensionalTransmission::LoRaDimensionalTransmission(const IRadio *transmitt
 {
 }
 
-std::ostream& LoRaDimensionalTransmission::printToStream(std::ostream& stream, int level) const
+std::ostream& LoRaDimensionalTransmission::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     stream << "LoRaDimensionalTransmission";
     if (level <= PRINT_LEVEL_DEBUG)

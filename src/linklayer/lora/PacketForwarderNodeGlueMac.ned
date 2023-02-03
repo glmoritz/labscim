@@ -49,7 +49,7 @@ module PacketForwarderNodeGlueMac extends MacProtocolBase like IMacProtocol
         string MQTTLoggerIPAddress = default("localhost"); // address of the mqtt broker used by app server
         string MQTTLoggerApplicationTopic = default("application/1/device/#"); // mqtt topic used by the lora application
         
-        volatile double BootTime @unit(s) = default(0); //time to boot up the node 
+        volatile double BootTime @unit(s) = default(0 s); //time to boot up the node 
                 
         string address = default("auto"); // MAC address as hex string (12 hex digits), or
                                           // "auto". "auto" values will be replaced by

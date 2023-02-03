@@ -14,16 +14,16 @@
 #include <iostream>
 #include <omnetpp.h>
 #include "LabscimRadioRecorder.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
-#include "inet/physicallayer/base/packetlevel/FlatTransmissionBase.h"
-#include "inet/physicallayer/base/packetlevel/FlatReceptionBase.h"
-#include "inet/physicallayer/base/packetlevel/FlatRadioBase.h"
-#include "inet/physicallayer/base/packetlevel/FlatReceiverBase.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatTransmissionBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatReceptionBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatRadioBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatReceiverBase.h"
 
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalReception.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalTransmission.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
 
-#include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/SignalTag_m.h"
 #include "inet/linklayer/base/MacProtocolBase.h"
 #include "inet/common/Simsignals.h"
 #include "inet/common/packet/Message.h"
@@ -63,11 +63,11 @@ void LabscimRadioRecorder::initialize(int stage)
         if(LogEnabled)
         {
             getSimulation()->getSystemModule()->subscribe(IRadio::radioModeChangedSignal, this);
-            getSimulation()->getSystemModule()->subscribe(IRadio::transmissionEndedSignal, this);
-            getSimulation()->getSystemModule()->subscribe(IRadio::receptionEndedSignal, this);
+            getSimulation()->getSystemModule()->subscribe(transmissionEndedSignal, this);
+            getSimulation()->getSystemModule()->subscribe(receptionEndedSignal, this);
             getSimulation()->getSystemModule()->subscribe(IRadio::receptionStateChangedSignal, this);
             getSimulation()->getSystemModule()->subscribe(IRadio::transmissionStateChangedSignal, this);
-            getSimulation()->getSystemModule()->subscribe(IRadio::receptionStartedSignal, this);
+            getSimulation()->getSystemModule()->subscribe(receptionStartedSignal, this);
             getSimulation()->getSystemModule()->subscribe(packetSentToUpperSignal, this);
 
             std::string radiopath = par("SpectrumRadioReceiverPath").str();
@@ -80,8 +80,8 @@ void LabscimRadioRecorder::initialize(int stage)
             SpectrumRadioReceiver = dynamic_cast<inet::physicallayer::FlatRadioBase *>(getModuleByPath(targetradiopath.c_str()));
             if(SpectrumRadioReceiver)
             {
-                SpectrumRadioReceiver->subscribe(IRadio::receptionStartedSignal, this);
-                SpectrumRadioReceiver->subscribe(IRadio::transmissionStartedSignal, this);
+                SpectrumRadioReceiver->subscribe(receptionStartedSignal, this);
+                SpectrumRadioReceiver->subscribe(transmissionStartedSignal, this);
             }
         }
     }
@@ -226,7 +226,7 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
 {
     if(dynamic_cast<inet::physicallayer::Radio *>(source)==SpectrumRadioReceiver)
     {
-        if(signalID == IRadio::receptionStartedSignal)
+        if(signalID == receptionStartedSignal)
         {
             const DimensionalReception* reception = dynamic_cast<const DimensionalReception *>(obj);
             if(reception!=nullptr)
@@ -235,7 +235,7 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
                 spectrumPower.addElement(receptionPowerFunction);
             }
         }
-        else if(signalID == IRadio::transmissionEndedSignal)
+        else if(signalID == transmissionEndedSignal)
         {
             const DimensionalTransmission* transmission = check_and_cast<const DimensionalTransmission *>(obj);
             if(transmission!=nullptr)
@@ -248,7 +248,7 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
     else
     {
 
-        if(signalID == IRadio::transmissionEndedSignal)
+        if(signalID == transmissionEndedSignal)
         {
             const FlatTransmissionBase* transmission = check_and_cast<const FlatTransmissionBase *>(obj);
             if(transmission!=nullptr)
@@ -257,7 +257,7 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
                 LogFile << "," << transmission->getStartTime() << "," << transmission->getEndTime() << "," << transmission->getCenterFrequency().get() << "," << transmission->getBandwidth().get() << "\n";
             }
         }
-        else if(signalID == IRadio::receptionStartedSignal)
+        else if(signalID == receptionStartedSignal)
         {
             const FlatReceptionBase* reception = check_and_cast<const FlatReceptionBase *>(obj);
             if(reception!=nullptr)
@@ -270,7 +270,7 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
                 }
             }
         }
-        else if(signalID == IRadio::receptionEndedSignal)
+        else if(signalID == receptionEndedSignal)
         {
             const FlatReceptionBase* reception = check_and_cast<const FlatReceptionBase *>(obj);
             if(reception!=nullptr)

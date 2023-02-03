@@ -18,7 +18,7 @@
 
 package labscim.physicallayer.lora.packetlevel;
 
-import inet.physicallayer.base.packetlevel.FlatRadioBase;
+import inet.physicallayer.wireless.common.base.packetlevel.FlatRadioBase;
 
 module LoRaRadio extends FlatRadioBase
 {

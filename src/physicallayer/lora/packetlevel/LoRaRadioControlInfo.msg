@@ -17,8 +17,8 @@
 
 import inet.common.INETDefs;
 import inet.common.Units;
-import inet.physicallayer.contract.packetlevel.IModulation;
-import inet.physicallayer.contract.packetlevel.RadioControlInfo;
+import inet.physicallayer.wireless.common.contract.packetlevel.IModulation;
+import inet.physicallayer.wireless.common.contract.packetlevel.RadioControlInfo;
 //import inet.physicallayer.contract.packetlevel.ConfigureRadioCommand;
 
 

@@ -19,7 +19,7 @@
 #ifndef __LABSCIM_LORADIMENSIONALRECEIVER_H
 #define __LABSCIM_LORADIMENSIONALRECEIVER_H
 
-#include "inet/physicallayer/base/packetlevel/FlatReceiverBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatReceiverBase.h"
 #include "LoRaDimensionalReception.h"
 #include "inet/common/Units.h"
 #include "../../../common/lr_fhss_v1_base_types.h"
@@ -61,7 +61,7 @@ class INET_API LoRaDimensionalReceiver : public FlatReceiverBase
 
     void initialize(int stage) override;
 
-    virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
+    virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags=0) const override;
 
     virtual W getMinInterferencePower() const override { return minInterferencePower; }
 
@@ -71,7 +71,8 @@ class INET_API LoRaDimensionalReceiver : public FlatReceiverBase
     virtual bool computeIsReceptionSuccessful(const IListening *listening, const IReception *reception, IRadioSignal::SignalPart part, const IInterference *interference, const ISnir *snir) const override;
     virtual const IReceptionDecision* computeReceptionDecision(const IListening *listening, const IReception *reception, IRadioSignal::SignalPart part, const IInterference *interference, const ISnir *snir) const override;
 
-    virtual const IListening* createListening(const IRadio *radio, const simtime_t startTime, const simtime_t endTime, const Coord startPosition, const Coord endPosition) const override;
+    virtual const IListening *createListening(const IRadio *radio, const simtime_t startTime, const simtime_t endTime, const Coord& startPosition, const Coord& endPosition) const override;
+
     virtual const IReceptionResult *computeReceptionResult(const IListening *listening, const IReception *reception, const IInterference *interference, const ISnir *snir, const std::vector<const IReceptionDecision *> *decisions) const override;
 
 
