@@ -308,7 +308,7 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
         std::vector<uint8_t> vec(payload->Message, payload->Message + payload->MessageSize_bytes);
         dataMessage->setBytes(vec);
         cmsg->addTag<CreationTimeTag>()->setCreationTime(simTime());
-        cmsg->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ieee802154);
+        cmsg->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::unknown);
         cmsg->insertAtBack(dataMessage);
 
         radio->setRadioMode(IRadio::RADIO_MODE_TRANSMITTER);
@@ -705,7 +705,7 @@ void LoRaMacNodeGlueMac::ProcessCommands()
 #ifdef LABSCIM_LOG_COMMANDS
                     sprintf(log,"seq%4d\tLABSCIM_SIGNAL_EMIT_CHAR\n",hdr->sequence_number);
 #endif
-                    cLabscimSignal sig(emit_signal->string,emit_signal->string_size);
+                    cLabscimSignal sig(emit_signal->signal_id, emit_signal->string,emit_signal->string_size);
                     EV_DEBUG << "Emmiting " << getSignalName(emit_signal->signal_id) << ". Value: (binary string)";
                     emit(emit_signal->signal_id, &sig);
                     free(cmd);
@@ -768,8 +768,8 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
 
         struct loramac_node_setup setup_msg;
         SHA1 hash;
-        byte digest[40];
-        hash.Update((const byte*)mNodeName.data(), mNodeName.size());
+        CryptoPP::byte digest[40];
+        hash.Update((const CryptoPP::byte*)mNodeName.c_str(), mNodeName.size());
         hash.Final(digest);
         memcpy(setup_msg.AppKey, digest, 32);
         setup_msg.output_logs = par("OutputLogs").boolValue()?1:0;

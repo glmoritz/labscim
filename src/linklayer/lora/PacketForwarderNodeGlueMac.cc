@@ -277,7 +277,7 @@ void PacketForwarderNodeGlueMac::PerformRadioCommand(struct labscim_radio_comman
         std::vector<uint8_t> vec(payload->Message, payload->Message + payload->MessageSize_bytes);
         dataMessage->setBytes(vec);
         cmsg->addTag<CreationTimeTag>()->setCreationTime(simTime());
-        cmsg->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ieee802154);
+        cmsg->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::unknown);
         cmsg->insertAtBack(dataMessage);
 
         auto loraparameters = cmsg->addTagIfAbsent<LoRaParamsReq>();
@@ -617,7 +617,7 @@ void PacketForwarderNodeGlueMac::ProcessCommands()
 #ifdef LABSCIM_LOG_COMMANDS
                     sprintf(log,"seq%4d\tLABSCIM_SIGNAL_EMIT_CHAR\n",hdr->sequence_number);
 #endif
-                    cLabscimSignal sig(emit_signal->string,emit_signal->string_size);
+                    cLabscimSignal sig(emit_signal->signal_id, emit_signal->string,emit_signal->string_size);
                     EV_DEBUG << "Emmiting " << getSignalName(emit_signal->signal_id) << ". Value: (binary string)";
                     emit(emit_signal->signal_id, &sig);
                     free(cmd);

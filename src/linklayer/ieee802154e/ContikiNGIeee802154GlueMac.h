@@ -111,7 +111,8 @@ protected:
     enum self_msgs {
         BOOT_MSG = 1,
         CONTIKI_TIMER_MSG = 2,
-        CCA_ENDED = 3
+        CCA_ENDED = 3,
+        EMIT_SIGNAL = 4
     };
 
     /*************************************************************/

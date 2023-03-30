@@ -321,14 +321,14 @@ void ContikiNGIeee802154GlueMac::PerformRadioCommand(struct labscim_radio_comman
     case CONTIKI_RADIO_SEND:
     {
         struct contiki_radio_payload* payload = (struct contiki_radio_payload*)cmd->radio_struct;
-        char msgname[20];
-        sprintf(msgname, "packet-node-%d", getIndex());
+        char msgname[64];
+        snprintf(msgname, 64, "packet-node-%s", mNodeName.c_str());
         auto cmsg = new Packet(msgname);
         auto dataMessage = makeShared<BytesChunk>();
         std::vector<uint8_t> vec(payload->Message, payload->Message + payload->MessageSize_bytes);
         dataMessage->setBytes(vec);
         cmsg->addTag<CreationTimeTag>()->setCreationTime(simTime());
-        cmsg->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ieee802154);
+        cmsg->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::unknown);
         cmsg->insertAtBack(dataMessage);
 
         radio->setRadioMode(IRadio::RADIO_MODE_TRANSMITTER);
@@ -354,20 +354,20 @@ void ContikiNGIeee802154GlueMac::PerformRadioCommand(struct labscim_radio_comman
         if(mCCATimerMsg == nullptr)
         {
             cMessage* CCAMsg;
-            double us = simTime().dbl() * 1000000;
             CCAMsg = new cMessage((mNodeName + "-cca").c_str());
             CCAMsg->setKind(CCA_ENDED);
             CCAMsg->setContextPointer((void*)cmd);
             mCCATimerMsg = CCAMsg;
-            scheduleAt(us + rxSetupTime + ccaDetectionTime, CCAMsg);
+            scheduleAt(simTime() + rxSetupTime + ccaDetectionTime, CCAMsg);
 #ifdef LABSCIM_LOG_COMMANDS
             std::stringstream stream;
-            stream << "CCA Start\n";
+            stream << "CCA Start. End in " << (simTime() + rxSetupTime + ccaDetectionTime).dbl());
             Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
             EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
             configureRadio(mCurrentCenterFrequency, mCurrentBandwidth, mCurrentPower, mCurrentBitrate, IRadio::RADIO_MODE_RECEIVER);
         }
+        break;
     }
     case CONTIKI_RADIO_GET_STATE:
     {
@@ -584,7 +584,7 @@ void ContikiNGIeee802154GlueMac::ProcessCommands()
 #ifdef LABSCIM_LOG_COMMANDS
                     sprintf(log,"seq%4d\tLABSCIM_SIGNAL_EMIT_CHAR\n",hdr->sequence_number);
 #endif
-                    cLabscimSignal sig(emit_signal->string,emit_signal->string_size);
+                    cLabscimSignal sig(emit_signal->signal_id, emit_signal->string,emit_signal->string_size);
                     EV_DEBUG << "Emmiting " << getSignalName(emit_signal->signal_id) << ". Value: (binary string)";
                     emit(emit_signal->signal_id, &sig);
                     free(cmd);
@@ -639,6 +639,7 @@ void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
     case BOOT_MSG:
     {
         struct contiki_node_setup setup_msg;
+        simtime_t packetgenerationrate;
         setup_msg.output_logs = (uint8_t)par("OutputLogs").boolValue();
         setup_msg.tsch_coordinator = (uint8_t)par("TSCHCoordinator").boolValue()?1:0;
         setup_msg.request_downstream = (uint8_t)par("RequestDownstream").boolValue()?1:0;
@@ -647,6 +648,8 @@ void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
         networkInterface->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
         setup_msg.startup_time = (uint64_t)(simTime().dbl() * 1000000);
+        packetgenerationrate = par("PacketGenerationRate");
+        setup_msg.packet_generation_rate_s = packetgenerationrate.dbl();
 #ifdef LABSCIM_LOG_COMMANDS
         std::stringstream stream;
         stream << "BOOT\n";
@@ -675,20 +678,48 @@ void ContikiNGIeee802154GlueMac::handleSelfMessage(cMessage *msg)
     }
     case CCA_ENDED:
     {
-        struct labscim_radio_command* cmd = (struct labscim_radio_command*)msg->getContextPointer();
-        struct contiki_radio_cca ChannelFree;
-        //PERFORM CCA
-        ChannelFree.ChannelIsFree = (radio->getReceptionState() == IRadio::RECEPTION_STATE_IDLE)?1:0;
+        if(msg->getContextPointer()!=nullptr)
+        {
+            struct labscim_radio_command* cmd = (struct labscim_radio_command*)msg->getContextPointer();
+            struct contiki_radio_cca ChannelFree;
+            //PERFORM CCA
+            ChannelFree.ChannelIsFree = (radio->getReceptionState() == IRadio::RECEPTION_STATE_IDLE)?1:0;
+            if(!ChannelFree.ChannelIsFree)
+            {
+                ChannelFree.ChannelIsFree++;
+            }
 #ifdef LABSCIM_LOG_COMMANDS
-        std::stringstream stream;
-        stream << "CCA End: Channel is " << ChannelFree.ChannelIsFree?"Free":"Busy";
-        Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
-        EV_DEBUG << (uint8_t*)stream.str().c_str();
+            std::stringstream stream;
+            stream << "CCA End: Channel is " << ChannelFree.ChannelIsFree?"Free":"Busy";
+            Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
+            EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
-        //radio->setRadioMode(IRadio::RADIO_MODE_SLEEP); //DO IT?
-        SendRadioResponse(CONTIKI_RADIO_CCA_RESULT, (uint64_t)round((simTime().dbl() * 1000000)),(uint8_t*)&ChannelFree, sizeof(struct contiki_radio_cca), cmd->hdr.sequence_number);
-        mCCATimerMsg = nullptr;
-        free(cmd);
+            //radio->setRadioMode(IRadio::RADIO_MODE_SLEEP); //DO IT?
+            SendRadioResponse(CONTIKI_RADIO_CCA_RESULT, (uint64_t)round((simTime().dbl() * 1000000)),(uint8_t*)&ChannelFree, sizeof(struct contiki_radio_cca), cmd->hdr.sequence_number);
+            mCCATimerMsg = nullptr;
+            free(cmd);
+        }
+        break;
+    }
+    case EMIT_SIGNAL:
+    {
+        if(msg->getContextPointer()!=nullptr)
+        {
+            cLabscimSignal* sig = dynamic_cast<cLabscimSignal*>((cObject*)msg->getContextPointer());
+            if(sig)
+            {
+                char Msg[256];
+                sig->getMessage(Msg,256);
+                SendSignal(sig->getSignalID(), (uint64_t)round((simTime().dbl() * 1000000)), Msg, sig->getMessageSize()<256?sig->getMessageSize():256);
+#ifdef LABSCIM_LOG_COMMANDS
+                std::stringstream stream;
+                stream << "Signal Sent";
+                Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
+                EV_DEBUG << (uint8_t*)stream.str().c_str();
+#endif
+                delete sig;
+            }
+        }
         break;
     }
     default:
@@ -793,14 +824,17 @@ void ContikiNGIeee802154GlueMac::receiveSignal(cComponent *source, simsignal_t s
     MacProtocolBase::receiveSignal(source, signalID, obj, details);
     if(std::find(mSubscribedSignals.begin(), mSubscribedSignals.end(), signalID) != mSubscribedSignals.end())
     {
-        cLabscimSignal* sig = dynamic_cast<cLabscimSignal*>(obj);
-        if(sig)
-        {
-            char Msg[256];
-            sig->getMessage(Msg,256);
-            SendSignal(signalID, (uint64_t)round((simTime().dbl() * 1000000)), Msg, sig->getMessageSize()<256?sig->getMessageSize():256);
-        }
-        ProcessCommands();
+        cMessage* SIGMsg;
+        SIGMsg = new cMessage((mNodeName + "-signal").c_str());
+        SIGMsg->setKind(EMIT_SIGNAL);
+        SIGMsg->setContextPointer((void*)(obj->dup()));
+        scheduleAt(simTime(), SIGMsg);
+#ifdef LABSCIM_LOG_COMMANDS
+        std::stringstream stream;
+        stream << "Scheduling signal to " << mNodeName << "\n";
+        Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
+        EV_DEBUG << (uint8_t*)stream.str().c_str();
+#endif
     }
 }
 

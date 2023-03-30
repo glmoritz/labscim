@@ -55,6 +55,7 @@ void LabscimRadioRecorder::initialize(int stage)
         if(LogEnabled)
         {
             LogFile.open(name);
+            LogFile << std::fixed;
             SpectrumFile.open(spectrumname);
         }
     }
@@ -89,7 +90,7 @@ void LabscimRadioRecorder::initialize(int stage)
 
 void LabscimRadioRecorder::writeConstantPowerValue(double tstart, double tend, double centerfrequency, double bandwidth, double power)
 {
-    SpectrumFile << setprecision(13);
+    SpectrumFile << std::fixed << setprecision(13);
     SpectrumFile << "POW, " <<  tstart << "," <<  tend << "," <<  centerfrequency << "," <<  bandwidth << "," <<  power << "\n";
 }
 

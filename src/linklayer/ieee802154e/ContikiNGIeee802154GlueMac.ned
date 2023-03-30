@@ -38,26 +38,26 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
 {                                 
     parameters:
         
-        @statistic[TSCHUpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
-        @statistic[TSCHUpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
-        @statistic[TSCHUpstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
-        @statistic[TSCHUpstreamPacketError](record=histogram,vector?; interpolationmode=none);
+        @statistic[UpstreamPacketGenerated](record=histogram,last,vector?; interpolationmode=none);
+        @statistic[UpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
+        @statistic[UpstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
+        @statistic[UpstreamPacketError](record=histogram,vector?; interpolationmode=none);
         
-        @statistic[TSCHDownstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
-        @statistic[TSCHDownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
-        @statistic[TSCHDownstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
-        @statistic[TSCHPacketRTT](record=histogram,vector?; interpolationmode=none);        
+        @statistic[DownstreamPacketGenerated](record=histogram,last,vector?; interpolationmode=none);
+        @statistic[DownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
+        @statistic[DownstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
+        @statistic[PacketRTT](record=histogram,vector?; interpolationmode=none);        
         
-        @statistic[TSCHNodeJoin](record=last,histogram,vector; interpolationmode=sample-hold);                
-        @statistic[TSCHNodeAssociated](record=last,histogram,vector; interpolationmode=sample-hold);        
+        @statistic[NodeJoin](record=last,histogram,vector; interpolationmode=sample-hold);                
+        @statistic[NodeAssociated](record=last,histogram,vector; interpolationmode=sample-hold);        
         
-        @statistic[TSCHUpstreamAoIMax](record=histogram,vector?; interpolationmode=none);
-        @statistic[TSCHUpstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
-        @statistic[TSCHUpstreamAoIArea](record=histogram,vector?; interpolationmode=none);
+        @statistic[UpstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[UpstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[UpstreamAoIArea](record=histogram,vector?; interpolationmode=none);
         
-        @statistic[TSCHDownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
-        @statistic[TSCHDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
-        @statistic[TSCHDownstreamAoIArea](record=histogram,sum,vector?; interpolationmode=none);
+        @statistic[DownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[DownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[DownstreamAoIArea](record=histogram,sum,vector?; interpolationmode=none);
         
         @statistic[radioOffTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
         @statistic[radioSleepTimeChanged](record=last,vector?; interpolationmode=sample-hold);        
@@ -74,13 +74,13 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
                                           // "auto". "auto" values will be replaced by
                                           // a generated MAC address in init stage 0.
         
-        string NodeProcessSshAddress = default("::1"); // SSH address of the machine in which the upper layer process will be executed
-		string NodeProcessCommand; // Command to be executed in the remote host to spawn the upper layer process                                           
+        string NodeProcessCommand; // Command to be executed in the remote host to spawn the upper layer process                                           
 		string NodeExtraArguments = default(""); // Extra arguments for the node
 		bool NodeDebug = default(false); // Command to be executed in the remote host to spawn the upper layer process
 		bool OutputLogs = default(false); // If true, contiki will write its printfs to a file
 		bool TSCHCoordinator = default(false); // If true, contiki node will be a TSCH coordinator
 		int NodeProcessConnectionPort = default(9608);//The default TCP port that will be used for connection                                          
+		double PacketGenerationRate @unit(s) = default(60 s);//The average packet generation rate (average seconds per packet)		
 		
 		bool RequestDownstream = default(false);
                                           
@@ -91,7 +91,8 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
         double bitrate @unit(bps) = default(50000 bps); //1 bit per symbol
 
         // Clear Channel Assessment detection time
-        double ccaDetectionTime @unit(s) = default(0.000160 s); // 8 symbols @ 50k baud (Table 11-1 and 20-1 from 802.15.4g std)
+        //double ccaDetectionTime @unit(s) = default(0.000160 s); // 8 symbols @ 50k baud (Table 11-1 and 20-1 from 802.15.4g std)
+        double ccaDetectionTime @unit(s) = default(0.0003 s); // 8 symbols @ 50k baud (Table 11-1 and 20-1 from 802.15.4g std)
         // Time to setup radio to reception state
         double rxSetupTime @unit(s) = default(0 s);
         // Time to switch radio from Rx to Tx state
