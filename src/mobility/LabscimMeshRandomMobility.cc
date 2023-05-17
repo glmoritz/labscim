@@ -25,6 +25,7 @@
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <boost/geometry/algorithms/within.hpp>
 
 
 #include <boost/graph/graph_traits.hpp>
@@ -68,17 +69,31 @@ void LabscimMeshRandomMobility::setInitialPosition()
 
     // create a typedef for the Graph type
     typedef adjacency_list<vecS, vecS, directedS> Graph;
+    polygon boundary_poly;
 
+    bool fixedNode =  par("fixedNode");
+    uint32_t context = par("context");
+    double initialZ = par("initialZ");
+    bool boundary_set = false;
 
     minimumDistance = par("minimumDistance");
     maximumDistance = par("maximumDistance");
     numNeighbors = par("numNeighbors");
     numPoints = par("numPoints");
 
-    bool fixedNode =  par("fixedNode");
-    uint32_t context = par("context");
-    double initialZ = par("initialZ");
+    auto boundaryPolygonX = check_and_cast<cValueArray *>(par("boundaryPolygonX").objectValue());
+    auto boundaryPolygonY = check_and_cast<cValueArray *>(par("boundaryPolygonY").objectValue());
 
+    if(boundaryPolygonX->size()==boundaryPolygonY->size()&&boundaryPolygonX->size()>2)
+    {
+        for (int i = 0; i < boundaryPolygonX->size(); i++) {
+            float x = (boundaryPolygonX->get(i)).doubleValue();
+            float y = (boundaryPolygonY->get(i)).doubleValue();
+            point p(x,y);
+            bg::append(boundary_poly.outer(), p);
+        }
+        boundary_set = true;
+    }
 
     if(mPoints.find(context) == mPoints.end())
     {
@@ -86,8 +101,6 @@ void LabscimMeshRandomMobility::setInitialPosition()
         l.reserve(numPoints);
         mPoints.insert(std::make_pair(context, l));
     }
-
-
 
     if(mPoints[context].empty())
     {
@@ -125,19 +138,33 @@ void LabscimMeshRandomMobility::setInitialPosition()
                 ok_points.clear();
                 for(auto const& c: rtree)
                 {
-                    std::vector<pointI> result_n;
-                    rtree.query(bgi::nearest(std::get<0>(c), numNeighbors+1), std::back_inserter(result_n));
                     bool failed = false;
+                    point p = std::get<0>(c);
 
-                    for(auto neighbor=result_n.begin(); neighbor!=result_n.end(); ++neighbor)
+                    //first check if the point is within region boundary
+                    if(boundary_set)
                     {
-                        double clearance = bg::distance(std::get<0>(c), std::get<0>(*neighbor));
-                        if( (clearance>0) && ( (clearance<minimumDistance) || (clearance>maximumDistance) ) )
+                        if(!boost::geometry::within(p, boundary_poly))
                         {
                             failed = true;
-                            break;
                         }
                     }
+
+                    if(!failed)
+                    {
+                        std::vector<pointI> result_n;
+                        rtree.query(bgi::nearest(p, numNeighbors+1), std::back_inserter(result_n));
+                        for(auto neighbor=result_n.begin(); neighbor!=result_n.end(); ++neighbor)
+                        {
+                            double clearance = bg::distance(std::get<0>(c), std::get<0>(*neighbor));
+                            if( (clearance>0) && ( (clearance<minimumDistance) || (clearance>maximumDistance) ) )
+                            {
+                                failed = true;
+                                break;
+                            }
+                        }
+                    }
+
                     if(!failed)
                     {
                         ok_points.push_back(c);

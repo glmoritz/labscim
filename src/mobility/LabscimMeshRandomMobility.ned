@@ -38,6 +38,9 @@ simple LabscimMeshRandomMobility extends StationaryMobility
         bool fixedNode = default(false); //this node is not placed randomly. The position must be set with initialX/initialY if InitByCartesianCoord = true or by Geographic Coord otherwise 
         bool InitByCartesianCoord = default(false); //this node is placed by cartesian coordinates
         
+        object boundaryPolygonX = default(""); //bound the placement by the polygon defined by boundaryPolygonX and boundaryPolygonY
+        object boundaryPolygonY = default("");
+        
         //the parameters below are used only if fixedNode = true and ignored if InitByCartesianCoord = true
         //double initialLatitude @unit(deg) = default(nan deg);
         //double initialLongitude @unit(deg) = default(nan deg);

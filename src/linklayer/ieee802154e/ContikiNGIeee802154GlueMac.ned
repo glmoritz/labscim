@@ -43,6 +43,10 @@ module ContikiNGIeee802154GlueMac extends MacProtocolBase like IMacProtocol
         @statistic[UpstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
         @statistic[UpstreamPacketError](record=histogram,vector?; interpolationmode=none);
         
+        @statistic[PacketSentNumTx](record=histogram,last,vector?; interpolationmode=none);
+        @statistic[PacketSentStatus](record=histogram,vector?; interpolationmode=none);
+        @statistic[PacketReceivedETX](record=histogram,vector?; interpolationmode=none);        
+        
         @statistic[DownstreamPacketGenerated](record=histogram,last,vector?; interpolationmode=none);
         @statistic[DownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
         @statistic[DownstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
