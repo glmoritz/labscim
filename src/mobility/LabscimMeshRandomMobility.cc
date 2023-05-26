@@ -35,6 +35,7 @@
 // to store queries results
 #include <vector>
 
+
 // just for output
 #include <iostream>
 #include <boost/foreach.hpp>
@@ -51,6 +52,9 @@ using  multipoint = bg::model::multi_point<point>;
 using namespace boost;
 
 namespace labscim {
+
+
+
 
 Define_Module(LabscimMeshRandomMobility);
 
@@ -300,6 +304,12 @@ void LabscimMeshRandomMobility::setInitialPosition()
 //                    }
 
                 }
+            }
+            //randomize coords
+            int32_t size = coords.size();
+            for (int32_t i = 0; i < size - 1; i++) {
+                uint32_t j = i + intuniform(0, size-i);
+                std::swap(coords[i],coords[j]);
             }
             mPoints[context] = coords;
         }
