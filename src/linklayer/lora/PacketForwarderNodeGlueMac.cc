@@ -98,7 +98,7 @@ void PacketForwarderNodeGlueMac::initialize(int stage)
             }
         }
         radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
-        mTransmissionState == radio->getTransmissionState();
+        mTransmissionState = radio->getTransmissionState();
 
 
 

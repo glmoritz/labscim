@@ -25,7 +25,7 @@
  **************************************************************************/
 
 #ifndef __LABSCIM_PacketForwarderNodeGlueMac_H
-#define __LABSCIM_PAcketForwarderNodeGlueMac_H
+#define __LABSCIM_PacketForwarderNodeGlueMac_H
 
 #include "inet/queueing/contract/IPacketQueue.h"
 #include "inet/linklayer/base/MacProtocolBase.h"
