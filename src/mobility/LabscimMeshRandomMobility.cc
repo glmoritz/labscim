@@ -308,7 +308,7 @@ void LabscimMeshRandomMobility::setInitialPosition()
             //randomize coords
             int32_t size = coords.size();
             for (int32_t i = 0; i < size - 1; i++) {
-                uint32_t j = i + intuniform(0, size-i);
+                uint32_t j = i + intuniformexcl(0, size-i);
                 std::swap(coords[i],coords[j]);
             }
             mPoints[context] = coords;
