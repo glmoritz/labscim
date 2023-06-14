@@ -332,9 +332,9 @@ void LabscimMeshRandomMobility::setInitialPosition()
         {
             lastPosition.x = uniform(constraintAreaMin.x,constraintAreaMax.x);
             lastPosition.y = uniform(constraintAreaMin.y,constraintAreaMax.y);
-            lastPosition.z = par("initialZ");
             recordScalar("PositionViolation", 1);
         }
+        lastPosition.z = initialZ;
         EV_DEBUG << "position initialized randomly to form a mesh: index: (" << index << ") " << lastPosition << endl;
         if (par("updateDisplayString"))
             updateDisplayStringFromMobilityState();
