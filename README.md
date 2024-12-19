@@ -1,5 +1,23 @@
-# labscim
-LabSC Channel Simulator
+# LabSCim
+
+The Internet of Things (IoT) has introduced diverse communication technologies operating in unlicensed Industrial, Scientific, and Medical (ISM) bands, with Long Range Wide Area Network (LoRaWAN) and IPv6 over the Time-Slotted Channel Hopping mode of IEEE 802.15.4e (6TiSCH) emerging as prominent standards. However, evaluating the performance and coexistence of such technologies is a complex task due to hardware costs and the vast parameter space involved.
+
+To address these challenges, we present LabSCim, a novel OMNeT++-based simulation framework that integrates manufacturer reference code with advanced physical-layer modeling. LabSCim supports LoRaWAN, 6TiSCH, and other technologies with unprecedented detail, enabling:
+
+- Byte-accurate compliance with specifications.
+
+- Cross-technology interference modeling for realistic scenarios.
+
+- Performance evaluation in high-density networks
+
+
+
+# Documentation
+
+- The installation instructions can be found [here](documentation/INSTALLATION.md);
+- Usage examples can be found here and here. (coming soon)
+
+# Structure
 
 This is an adaptation layer to plug firmware of the major IoT platforms in a phy simulator running on omnet.
 We plan to use the vanilla version from the github of the main platforms and provide at least timer and radio drivers to interface with the simulator, along with all modifications which are particular to every supported firmaware (forked from the official repositories or maybe pulled to the official one).
