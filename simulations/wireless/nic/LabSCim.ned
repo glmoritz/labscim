@@ -24,13 +24,14 @@
 package tsch.simulations.wireless.nic;
 
 import inet.common.geometry.common.SimpleGeographicCoordinateSystem;
-import inet.visualizer.integrated.IntegratedCanvasVisualizer;
+import inet.visualizer.canvas.integrated.IntegratedCanvasVisualizer;
 import inet.networklayer.configurator.ipv4.Ipv4NetworkConfigurator;
-import inet.physicallayer.contract.packetlevel.IRadioMedium;
+import inet.physicallayer.wireless.common.contract.packetlevel.IRadioMedium;
 import inet.visualizer.contract.IIntegratedVisualizer;
 import inet.node.inet.AdhocHost;
 import inet.node.inet.WirelessHost;
 import labscim.physicallayer.LabscimRadioRecorder;
+import inet.environment.common.PhysicalEnvironment;
 
 network LabSCim
 {
@@ -43,29 +44,28 @@ network LabSCim
         
         @display("bgb=4500,4500");
         
-        @statistic[LoRaUpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
-        @statistic[LoRaUpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
-        @statistic[LoRaDownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
-        @statistic[LoRaUpstreamPacketError](record=histogram,vector?; interpolationmode=none);
-        @statistic[LoRaDownstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
-        @statistic[LoRaNodeJoin](record=histogram,vector; interpolationmode=none);
-        @statistic[LoRaPacketRTT](record=histogram,vector?; interpolationmode=none);
-        
+        @statistic[UpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
         @statistic[UpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
         @statistic[UpstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
         @statistic[UpstreamPacketError](record=histogram,vector?; interpolationmode=none);
+        
         @statistic[DownstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
-        
+        @statistic[DownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
         @statistic[DownstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
+        @statistic[PacketRTT](record=histogram,vector?; interpolationmode=none);        
         
+        @statistic[NodeJoin](record=histogram,vector?; interpolationmode=none);
+        @statistic[NodeLeave](record=histogram,vector?; interpolationmode=none);        
+        @statistic[NodeAssociated](record=histogram,vector?; interpolationmode=none);
+        @statistic[NodeDisassociated](record=histogram,vector?; interpolationmode=none);
         
+        @statistic[UpstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[UpstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[UpstreamAoIArea](record=histogram,vector?; interpolationmode=none);
         
-        @statistic[NodeLeave](record=histogram,vector; interpolationmode=none);        
-        @statistic[NodeAssociated](record=histogram,vector; interpolationmode=none);
-        @statistic[NodeDisassociated](record=histogram,vector; interpolationmode=none);  
-        
-        
-        
+        @statistic[DownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[DownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[DownstreamAoIArea](record=histogram,vector?; interpolationmode=none);
         
         
     submodules:   
@@ -73,7 +73,10 @@ network LabSCim
         //    parameters:
         //        @display("p=100,100");
         //}        
-          
+        physicalEnvironment: PhysicalEnvironment {
+            parameters:
+                @display("p=100,50");
+        }  
         coordinateSystem: SimpleGeographicCoordinateSystem {
             parameters:
                 @display("p=100,150");
