@@ -73,7 +73,7 @@ Select a workspace folder (recommended: `workspace` in your home directory):
 
 
 ## Step 13: Install INET Framework
-Use the menu "Help > Install Simulation Models..." in OMNeT++ to install the INET Framework 4 version 4.4.2 and rename the project to "inet". Click "Install Project" and wait for the installation to complete. Verify the installation in the "Project Explorer" and the console.
+Use the menu "Help > Install Simulation Models..." in OMNeT++ to install the INET Framework 4 version 4.4.2. Set the "Project Name" to "inet". Click "Install Project" and wait for the installation to complete. Verify the installation in the "Project Explorer" and the console.
 
 ## Step 14: Install Additional Packages for LabSCim
 Install the required Ubuntu packages for LabSCim:
@@ -129,25 +129,31 @@ Compile the Packet Forwarder:
 cd $HOME/LabSCim/packet_forwarder && make -j$(nproc)
 ```
 
-## Step 23: Compile Contiki-NG Example
+## Step 23: (Optional) Compile Contiki-NG Example
 Compile the `simple-node` example from Contiki-NG:
 ```bash
 cd $HOME/LabSCim/contiki-ng/examples/6tisch/simple-node && make -j$(nproc) TARGET=labscim
 ```
 
-## Step 24: Create Symbolic Link for INET Framework
+## Step 24: (Optional) Compile Contiki-NG UDP Example
+Compile the UDP example from Contiki-NG:
+```bash
+cd $HOME/LabSCim/contiki-ng/examples/rpl-udp && make -j$(nproc) TARGET=labscim
+```
+
+## Step 25: Create Symbolic Link for INET Framework
 Create a symbolic link for the INET Framework:
 ```bash
 ln -s $HOME/LabSCim/workspace/inet/ $HOME/LabSCim/inet4.4
 ```
 
-## Step 25: Compile INET Framework
+## Step 26: Compile INET Framework
 Compile the INET Framework:
 ```bash
 cd $HOME/LabSCim/inet4.4 && make -j$(nproc)
 ```
 
-## Step 26: Compile LabSCim
+## Step 27: Compile LabSCim
 Compile LabSCim with the following commands:
 ```bash
 cd $HOME/LabSCim/models/labscim/src &&
@@ -155,28 +161,22 @@ source $HOME/LabSCim/omnetpp-6.0.3/setenv &&
 $HOME/LabSCim/omnetpp-6.0.3/bin/opp_makemake -f --deep -KINET_PROJ=$HOME/LabSCim/inet4.4 -DINET_IMPORT -I$HOME/LabSCim/inet4.4/src -L$HOME/LabSCim/inet4.4/src -lboost_system -lcryptopp -lpthread -lrt -lINET && make -j$(nproc)
 ```
 
-## Step 27: Fix Symbolic Links for LoRaMac-Node
+## Step 28: Fix Symbolic Links for LoRaMac-Node
 Run the following commands to fix symbolic links for LoRaMac-Node:
 ```bash
 cd $HOME/LabSCim/LoRaMac-node/src/boards/labscim && sudo chmod +x fix_symlinks.sh && ./fix_symlinks.sh
 ```
 
-## Step 28: Generate Build Configuration for LoRaMac-Node
+## Step 29: Generate Build Configuration for LoRaMac-Node
 Generate the build configuration for LoRaMac-Node:
 ```bash
 cd $HOME/LabSCim/LoRaMac-node/ && cmake -DCMAKE_BUILD_TYPE:STRING=Release -DAPPLICATION:STRING=LoRaMac -DSUB_PROJECT:STRING=periodic-uplink-lpp -DLORAWAN_DEFAULT_CLASS:STRING=CLASS_A -DCLASSB_ENABLED:STRING=ON -DACTIVE_REGION:STRING=LORAMAC_REGION_AU915 -DMODULATION:STRING=LORA -DBOARD:STRING=labscim -DMBED_RADIO_SHIELD:STRING=LABSCIM_SHIELD -DLORAMAC_LR_FHSS_IS_ON:STRING=ON -DSECURE_ELEMENT:STRING=SOFT_SE -DSECURE_ELEMENT_PRE_PROVISIONED:STRING=OFF -DREGION_EU868:STRING=ON -DREGION_US915:STRING=OFF -DREGION_CN779:STRING=OFF -DREGION_EU433:STRING=OFF -DREGION_AU915:STRING=ON -DREGION_CN470:STRING=OFF -DREGION_AS923:STRING=OFF -DREGION_KR920:STRING=OFF -DREGION_IN865:STRING=OFF -DREGION_RU864:STRING=OFF -DREGION_AS923_DEFAULT_CHANNEL_PLAN:STRING=CHANNEL_PLAN_GROUP_AS923_1 -DREGION_CN470_DEFAULT_CHANNEL_PLAN:STRING=CHANNEL_PLAN_20MHZ_TYPE_A -DUSE_RADIO_DEBUG:STRING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++ -S$HOME/LabSCim/LoRaMac-node/ -B$HOME/LabSCim/LoRaMac-node/build -G Ninja
 ```
 
-## Step 29: Compile LoRaMac-Node
+## Step 30: Compile LoRaMac-Node
 Compile the LoRaMac-Node with Ninja:
 ```bash
 cd $HOME/LabSCim/LoRaMac-node/build && ninja
-```
-
-## Step 30: Compile Contiki-NG UDP Example
-Compile the UDP example from Contiki-NG:
-```bash
-cd $HOME/LabSCim/contiki-ng/examples/rpl-udp && make -j$(nproc) TARGET=labscim
 ```
 
 ## Step 31: Launch OMNeT++
@@ -186,6 +186,11 @@ cd $HOME/LabSCim/omnetpp-6.0.3 && source setenv && omnetpp
 ```
 
 ## Step 32: Select Workspace and Finalize
-Select the `workspace` folder. Note that the INET project must be `inet` (and not `inet4.4`).
+Select the `workspace` folder.
+
+
+## Next steps
+
+In order to run an example code, see the [CSMA Contiki-NG example](EXAMPLE_CSMA_CONTIKI.md).
 
 
