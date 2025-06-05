@@ -20,18 +20,26 @@ Use the following command to start the docker container for chirpstack:
 cd $HOME/LabSCim/labscim-chirpstack-docker && docker compose up -d
 ```
 
-### 3. Test if Chirpstack it is running
+### 3. Update ChirpStack Database (Reset DevNonce)
+
+Sometimes, devices may fail to join the network due to `DevNonce` reuse errors—especially during development or repeated testing with OTAA devices. To resolve this, you can reset the `DevNonce` history stored in the ChirpStack database. Run the following command:
+
+```bash
+cd $HOME/LabSCim/models/labscim/src && python3 flush_nonce.py
+```
+
+### 4. Test if Chirpstack is running
 
 Try to login at the Chirpstack configuration panel using the address[http://localhost:8080/](http://localhost:8080/). The user and password are both 'admin'.
 
 
-### 2. Open OMNeT++
+### 5. Open OMNeT++
 If OMNeT++ is not already open, start it with the following commands:
 ```bash
 cd $HOME/LabSCim/omnetpp-6.0.3 && source setenv && omnetpp
 ```
 
-### 3. Import the Example Project
+### 6. Import the Example Project
 If you haven't done so already, import the examle project.
 To import the example project into OMNeT++:
 1. Navigate to **File -> Import**.
@@ -42,10 +50,10 @@ To import the example project into OMNeT++:
    ```
 4. Click **Finish**.
 
-### 4. Locate Simulation Configuration
+### 7. Locate Simulation Configuration
 The simulation configurations can be found in the file 'labscim/simulations/wireless/nic/labscim.ini'
 
-### 4. Configure the Simulation
+### 8. Configure the Simulation
 The simulation configurations can be found in the file 'labscim/simulations/wireless/nic/labscim.ini'.
 Open it, and change:
 
@@ -54,13 +62,13 @@ scheduler-class = "omnetpp::cRealTimeScheduler"
 realtimescheduler-scaling = 1
 ```
 
-### 5. Build and Debug the Project
+### 9. Build and Debug the Project
 To debug the project:
 1. Click on the **Debug** icon in OMNeT++.
 2. Select **OMNet++ Simulation**.
 3. Select the configuration file 'labscim/simulations/wireless/nic/labscim.ini'.
 
-### 6. Run the Simulation
+### 10. Run the Simulation
 After debugging, start the simulation by clicking on one of the **Play** icons available at the upper bar.
 
 ### 7. Access Simulation Logs
