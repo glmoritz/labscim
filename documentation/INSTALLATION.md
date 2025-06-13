@@ -86,7 +86,7 @@ sudo apt install -y git build-essential libssl-dev ninja-build software-properti
 ## Step 15: Clone LabSCim Repository
 Clone the necessary LabSCim repositories:
 ```bash
-mkdir $HOME/LabSCim/models && cd $HOME/LabSCim/models && git clone --branch lora-fhss https://github.com/glmoritz/labscim.git
+mkdir $HOME/LabSCim/models && cd $HOME/LabSCim/models && git clone https://github.com/glmoritz/labscim.git
 ```
 
 ## Step 16: Fix Symbolic Links for LabSCim
@@ -104,7 +104,7 @@ ln -s $HOME/LabSCim/models/labscim/ $HOME/LabSCim/labscim
 ## Step 18: Clone Additional Repositories
 Clone additional repositories required for LabSCim:
 ```bash
-cd $HOME/LabSCim && git clone https://github.com/glmoritz/contiki-ng.git --recursive && git clone --branch lora-fhss https://github.com/glmoritz/LoRaMac-node.git && git clone --branch lora-fhss https://github.com/glmoritz/lora_gateway.git && git clone --branch lora-fhss https://github.com/glmoritz/packet_forwarder.git
+cd $HOME/LabSCim && git clone https://github.com/glmoritz/contiki-ng.git --recursive && git clone https://github.com/glmoritz/LoRaMac-node.git && git clone https://github.com/glmoritz/lora_gateway.git && git clone https://github.com/glmoritz/packet_forwarder.git
 ```
 
 ## Step 19: Fix Symbolic Links for LoRa Gateway
