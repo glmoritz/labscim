@@ -15,7 +15,8 @@ To address these challenges, we present LabSCim, a novel OMNeT++-based simulatio
 # Documentation
 
 - The installation instructions can be found [here](documentation/INSTALLATION.md);
-- Usage examples can be found here and here. (coming soon)
+- Contiki-NG usage examples can be found [CSMA](documentation/EXAMPLE_CSMA_CONTIKI.md) and [6TiSCH](documentation/EXAMPLE_6TiSCH_CONTIKI.md);
+- LoRaWAN usage example can be found here [LoRaWAN](documentation/EXAMPLE_LoRaWAN.md).
 
 # Structure
 

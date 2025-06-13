@@ -1,5 +1,7 @@
 # Installation Guide for LabSCim Simulator
 
+These installation steps have been verified on **Ubuntu 22.04 LTS**.
+
 ## Step 1: Download OMNeT++
 Download the Linux version of OMNeT++ 6.0.3 from the [official website](https://omnetpp.org/download/old).
 
