@@ -45,6 +45,7 @@ network LabSCimLoRaWANvsTSCH
         
         @display("bgb=450,450");      
         
+        //CONTIKI-NG
         @statistic[UpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
         @statistic[UpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
         @statistic[UpstreamPacketHopcount](record=histogram,vector?; interpolationmode=none);
@@ -67,9 +68,33 @@ network LabSCimLoRaWANvsTSCH
         @statistic[DownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
         @statistic[DownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
         @statistic[DownstreamAoIArea](record=histogram,vector?; interpolationmode=none);
+               
+        //Packet_Forwarder 
+        @statistic[LoRaDownstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaDownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
         
-        	
+        //just for test
+        //@statistic[LoRaDownstreamPacket](record=histogram,vector?; interpolationmode=none); //just for test
+                
+        //@statistic[LoRaDownstreamAoIMax](record=histogram,vector?; interpolationmode=none);        
+        //@statistic[LoRaDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);
+        //@statistic[LoRaDownstreamAoIArea](record=histogram,vector?; interpolationmode=none);
         
+        //@statistic[LoRaPacketReceived](record=histogram,vector?; interpolationmode=none);
+        //@statistic[LoRaDownstreamPacket](record=histogram,vector?; interpolationmode=none);
+        
+        //LoRaMAC-node
+        @statistic[LoRaUpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaUpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaNodeJoin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaUpstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamAoIMin](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamAoIArea](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaNodeJoin](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaPacketRTT](record=histogram,vector?; interpolationmode=none);
+        
+
     submodules:      
         
         visualizer: <default(firstAvailableOrEmpty("IntegratedCanvasVisualizer"))> like IIntegratedVisualizer if typename != "" {

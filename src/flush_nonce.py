@@ -9,9 +9,9 @@ def execute(sql):
         print('Connecting to the PostgreSQL database...')        
         conn = psycopg2.connect(
             host="localhost",
-            database="chirpstack_ns",
-            user="chirpstack_ns",
-            password="labsc")
+            database="chirpstack",
+            user="chirpstack",
+            password="chirpstack")
 		
         # create a cursor
         cur = conn.cursor()
@@ -41,6 +41,6 @@ def execute(sql):
 
 
 if __name__ == '__main__':
-    sql = """ DELETE FROM public.device_activation  """
+    sql = """ UPDATE device_keys SET dev_nonces = '{"0000000000000000": []}'::jsonb  """
     
     execute(sql)
