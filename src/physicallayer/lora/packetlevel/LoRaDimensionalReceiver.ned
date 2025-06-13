@@ -18,7 +18,7 @@
 
 package labscim.physicallayer.lora.packetlevel;
 
-import inet.physicallayer.base.packetlevel.NarrowbandReceiverBase;
+import inet.physicallayer.wireless.common.base.packetlevel.NarrowbandReceiverBase;
 
 module LoRaDimensionalReceiver extends NarrowbandReceiverBase
 {

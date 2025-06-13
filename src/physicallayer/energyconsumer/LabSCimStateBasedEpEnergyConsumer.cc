@@ -16,9 +16,9 @@
 //
 
 #include "inet/common/ModuleAccess.h"
-#include "inet/physicallayer/energyconsumer/StateBasedEpEnergyConsumer.h"
+#include "inet/physicallayer/wireless/common/energyconsumer/StateBasedEpEnergyConsumer.h"
 #include "LabSCimStateBasedEpEnergyConsumer.h"
-#include "inet/physicallayer/base/packetlevel/FlatTransmitterBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatTransmitterBase.h"
 
 namespace labscim {
 

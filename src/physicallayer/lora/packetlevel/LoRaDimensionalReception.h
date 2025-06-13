@@ -19,8 +19,8 @@
 #define __LABSCIM_LORADIMENSIONALRECEPTION_H
 
 #include "inet/common/math/Functions.h"
-#include "inet/physicallayer/base/packetlevel/FlatReceptionBase.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalReception.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatReceptionBase.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
 #include "inet/common/Units.h"
 
 using namespace inet;

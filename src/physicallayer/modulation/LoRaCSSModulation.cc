@@ -29,7 +29,7 @@ LoRaCSSModulation::LoRaCSSModulation(unsigned int codeWordSize) :
 {
 }
 
-std::ostream& LoRaCSSModulation::printToStream(std::ostream& stream, int level) const
+std::ostream& LoRaCSSModulation::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     return stream << "LoRaCSSModulation";
 }

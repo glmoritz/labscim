@@ -19,8 +19,8 @@
 #define __LABSCIM_LORADIMENSIONALNOISE_H
 
 #include "inet/common/math/Functions.h"
-#include "inet/physicallayer/base/packetlevel/NarrowbandNoiseBase.h"
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalNoise.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/NarrowbandNoiseBase.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalNoise.h"
 
 using namespace inet;
 using namespace inet::physicallayer;
@@ -35,22 +35,29 @@ namespace physicallayer {
 class INET_API LoRaDimensionalNoise : public DimensionalNoise
 {
   protected:
+    const std::array<const bool,6> LoRaInterfererPresent;
+    const bool NonLoRaInterfererPresent;
     const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower;
     const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>> NonLoRapower;
     const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>> Backgroundpower;
     const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>> totalpower;
 
   public:
-    LoRaDimensionalNoise(simtime_t startTime, simtime_t endTime, Hz centerFrequency, Hz bandwidth, const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& Backgroundpower);
+    LoRaDimensionalNoise(simtime_t startTime, simtime_t endTime, Hz centerFrequency, Hz bandwidth, const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6> LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& Backgroundpower, const std::array<const bool, 6> LoRaInterfererPresent, const bool NonLoRaInterfererPresent);
 
 
-    virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
+    virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;
     virtual const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& getNonLoRapower() const { return NonLoRapower; }
     virtual const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6>& getLoRapower() const { return LoRapower; }
     virtual const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& getLoRapower(int LoRaSF) const { return LoRapower.at(LoRaSF - 7); }
+    virtual bool getLoRaInterfererPresent(int LoRaSF) const { return LoRaInterfererPresent.at(LoRaSF - 7); }
+    virtual bool getNonLoRaInterfererPresent() const { return NonLoRaInterfererPresent; }
+
     virtual const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& getBackgroundpower() const { return Backgroundpower; }
 
     virtual const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>> ComputeTotalNoise(const std::array<const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>,6>& LoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRapower, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& Backgroundpower);
+
+
 
     virtual W computeNonLoRaMinPower(simtime_t startTime, simtime_t endTime) const ;
     virtual W computeNonLoRaMaxPower(simtime_t startTime, simtime_t endTime) const ;

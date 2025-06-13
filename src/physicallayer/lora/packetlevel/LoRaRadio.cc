@@ -18,16 +18,21 @@
 #include "inet/common/ProtocolTag_m.h"
 #include "inet/common/packet/Packet.h"
 #include "inet/common/packet/chunk/BitCountChunk.h"
-#include "inet/physicallayer/apskradio/bitlevel/ApskEncoder.h"
-#include "inet/physicallayer/apskradio/bitlevel/ApskLayeredTransmitter.h"
-#include "inet/physicallayer/apskradio/packetlevel/ApskPhyHeader_m.h"
-#include "inet/physicallayer/apskradio/packetlevel/ApskRadio.h"
-#include "inet/physicallayer/base/packetlevel/FlatTransmitterBase.h"
-#include "inet/physicallayer/common/packetlevel/RadioMedium.h"
+#include "inet/physicallayer/wireless/apsk/bitlevel/ApskEncoder.h"
+#include "inet/physicallayer/wireless/apsk/bitlevel/ApskLayeredTransmitter.h"
+#include "inet/physicallayer/wireless/apsk/packetlevel/ApskPhyHeader_m.h"
+#include "inet/physicallayer/wireless/apsk/packetlevel/ApskRadio.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatTransmitterBase.h"
+#include "inet/physicallayer/wireless/common/medium/RadioMedium.h"
+#include "inet/common/lifecycle/ModuleOperations.h"
+#include "inet/common/ModuleAccess.h"
+#include "inet/common/Simsignals.h"
 #include "LoRaRadio.h"
 #include "LoRaDimensionalTransmitter.h"
 #include "LoRaDimensionalReceiver.h"
 #include "LoRaRadioControlInfo_m.h"
+#include "../../../common/labscim_sx126x.h"
+#include "LoRaFHSSHopEntry.h"
 
 using namespace inet;
 using namespace inet::physicallayer;
@@ -53,11 +58,51 @@ void LoRaRadio::initialize(int stage)
         LoRaSF = par("LoRaSF");
         LoRaCR = par("LoRaCR");
         iAmGateway = par("iAmGateway");
-
         LoRaTransmitter = check_and_cast<LoRaDimensionalTransmitter *>(getSubmodule("transmitter"));
+        LoRaTransmitter->setIamGateway(iAmGateway);
         LoRaReceiver = check_and_cast<LoRaDimensionalReceiver *>(getSubmodule("receiver"));
+        LoRaReceiver->setIamGateway(iAmGateway);
     }
 }
+
+void LoRaRadio::setLoRaModulationMode(sx126x_pkt_types_e mode)
+{
+    LoRaTransmitter->setLoRaModulationMode(mode);
+}
+
+sx126x_pkt_types_e LoRaRadio::getLoRaModulationMode()
+{
+    return LoRaTransmitter->getLoRaModulationMode();
+}
+
+Hz LoRaRadio::FHSSBandwidthToHz(lr_fhss_v1_bw_t bw)
+{
+    switch(bw)
+    {
+    case LR_FHSS_V1_BW_39063_HZ:
+        return Hz(39063);
+    case LR_FHSS_V1_BW_85938_HZ:
+        return Hz(85938);
+    case LR_FHSS_V1_BW_136719_HZ:
+        return Hz(136719);
+    case LR_FHSS_V1_BW_183594_HZ:
+        return Hz(183594);
+    case LR_FHSS_V1_BW_335938_HZ:
+        return Hz(335938);
+    case LR_FHSS_V1_BW_386719_HZ:
+        return Hz(386719);
+    case LR_FHSS_V1_BW_722656_HZ:
+        return Hz(722656);
+    case LR_FHSS_V1_BW_773438_HZ:
+        return Hz(773438);
+    case LR_FHSS_V1_BW_1523438_HZ:
+        return Hz(1523438);
+    case LR_FHSS_V1_BW_1574219_HZ:
+    default:
+        return Hz(1574219);
+    }
+}
+
 
 void LoRaRadio::handleUpperCommand(cMessage *message)
 {
@@ -86,6 +131,34 @@ void LoRaRadio::handleUpperCommand(cMessage *message)
                     datarate_changed = true;
                 }
             }
+
+            if (configureCommand->getFHSSCR() != -1)
+            {
+                if(getFHSSCR()!=configureCommand->getFHSSCR())
+                {
+                    setFHSSCR((lr_fhss_v1_cr_t)configureCommand->getFHSSCR());
+                    //datarate_changed = true; //we should set, but we are not setting by now
+                }
+            }
+
+            if (configureCommand->getFHSSBW() != -1)
+            {
+                if(LoRaTransmitter->getFHSSBW()!=configureCommand->getFHSSBW())
+                {
+                    LoRaTransmitter->setFHSSBW((lr_fhss_v1_bw_t)configureCommand->getFHSSBW());
+                    //datarate_changed = true; //we should set, but we are not setting by now
+                }
+                configureCommand->setBandwidth(FHSSBandwidthToHz((lr_fhss_v1_bw_t)configureCommand->getFHSSBW()));
+            }
+
+            if (configureCommand->getFHSSGrid() != -1)
+            {
+                if(LoRaTransmitter->getFHSSGrid()!=configureCommand->getFHSSGrid())
+                {
+                    LoRaTransmitter->setFHSSGrid((lr_fhss_v1_grid_t)configureCommand->getFHSSGrid());
+                }
+            }
+
 
             NarrowbandTransmitterBase *narrowbandTransmitter = const_cast<NarrowbandTransmitterBase *>(check_and_cast<const NarrowbandTransmitterBase *>(transmitter));
 
@@ -126,19 +199,23 @@ bool LoRaRadio::compareArrivals(cMessage* i1, cMessage* i2)
     return (i1->getArrivalTime() < i2->getArrivalTime());
 }
 
+void LoRaRadio::setHoppingSequence(std::vector<LoRaFHSSHopEntry>& HopTable)
+{
+        LoRaTransmitter->setHoppingSequence(HopTable);
+}
 
 void LoRaRadio::startReception(cMessage *timer, IRadioSignal::SignalPart part)
 {
     if(iAmGateway)
     {
-        auto signal = static_cast<Signal *>(timer->getControlInfo());
+        auto signal = static_cast<WirelessSignal *>(timer->getControlInfo());
         auto arrival = signal->getArrival();
         auto reception = signal->getReception();
         // TODO: should be this, but it breaks fingerprints: if (receptionTimer == nullptr && isReceiverMode(radioMode) && arrival->getStartTime(part) == simTime()) {
         if (isReceiverMode(radioMode) && arrival->getStartTime(part) == simTime()) {
             auto transmission = signal->getTransmission();
             auto isReceptionAttempted = medium->isReceptionAttempted(this, transmission, part);
-            EV_INFO << "Reception started: " << (isReceptionAttempted ? "\x1b[1mattempting\x1b[0m" : "\x1b[1mnot attempting\x1b[0m") << " " << (ISignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
+            EV_INFO << "Reception started: " << (isReceptionAttempted ? "\x1b[1mattempting\x1b[0m" : "\x1b[1mnot attempting\x1b[0m") << " " << (IWirelessSignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
             if (isReceptionAttempted)
             {
                 concurrentReceptions.push_back(timer);
@@ -146,7 +223,7 @@ void LoRaRadio::startReception(cMessage *timer, IRadioSignal::SignalPart part)
             }
         }
         else
-            EV_INFO << "Reception started: \x1b[1mignoring\x1b[0m " << (ISignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
+            EV_INFO << "Reception started: \x1b[1mignoring\x1b[0m " << (IWirelessSignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
         timer->setKind(part);
         scheduleAt(arrival->getEndTime(part), timer);
         updateReceptionTimer();
@@ -154,7 +231,7 @@ void LoRaRadio::startReception(cMessage *timer, IRadioSignal::SignalPart part)
         updateTransceiverPart();
 
         // TODO: move to radio medium
-        check_and_cast<RadioMedium *>(medium)->emit(IRadioMedium::signalArrivalStartedSignal, check_and_cast<const cObject *>(reception));
+        check_and_cast<RadioMedium *>(medium.get())->emit(IRadioMedium::signalArrivalStartedSignal, check_and_cast<const cObject *>(reception));
     }
     else
     {
@@ -169,7 +246,7 @@ void LoRaRadio::continueReception(cMessage *timer)
     {
         auto previousPart = (IRadioSignal::SignalPart)timer->getKind();
         auto nextPart = (IRadioSignal::SignalPart)(previousPart + 1);
-        auto signal = static_cast<Signal *>(timer->getControlInfo());
+        auto signal = static_cast<WirelessSignal *>(timer->getControlInfo());
         auto arrival = signal->getArrival();
         auto reception = signal->getReception();
         std::list<cMessage *>::iterator it = std::find(concurrentReceptions.begin(), concurrentReceptions.end(), timer);
@@ -178,13 +255,13 @@ void LoRaRadio::continueReception(cMessage *timer)
         {
             auto transmission = signal->getTransmission();
             bool isReceptionSuccessful = medium->isReceptionSuccessful(this, transmission, previousPart);
-            EV_INFO << "Reception ended: " << (isReceptionSuccessful ? "\x1b[1msuccessfully\x1b[0m" : "\x1b[1munsuccessfully\x1b[0m") << " for " << (ISignal *)signal << " " << IRadioSignal::getSignalPartName(previousPart) << " as " << reception << endl;
+            EV_INFO << "Reception ended: " << (isReceptionSuccessful ? "\x1b[1msuccessfully\x1b[0m" : "\x1b[1munsuccessfully\x1b[0m") << " for " << (IWirelessSignal *)signal << " " << IRadioSignal::getSignalPartName(previousPart) << " as " << reception << endl;
             if (!isReceptionSuccessful)
             {
                 concurrentReceptions.remove(timer);
             }
             auto isReceptionAttempted = medium->isReceptionAttempted(this, transmission, nextPart);
-            EV_INFO << "Reception started: " << (isReceptionAttempted ? "\x1b[1mattempting\x1b[0m" : "\x1b[1mnot attempting\x1b[0m") << " " << (ISignal *)signal << " " << IRadioSignal::getSignalPartName(nextPart) << " as " << reception << endl;
+            EV_INFO << "Reception started: " << (isReceptionAttempted ? "\x1b[1mattempting\x1b[0m" : "\x1b[1mnot attempting\x1b[0m") << " " << (IWirelessSignal *)signal << " " << IRadioSignal::getSignalPartName(nextPart) << " as " << reception << endl;
             if (!isReceptionAttempted)
             {
                 concurrentReceptions.remove(timer);
@@ -193,8 +270,8 @@ void LoRaRadio::continueReception(cMessage *timer)
         }
         else
         {
-            EV_INFO << "Reception ended: \x1b[1mignoring\x1b[0m " << (ISignal *)signal << " " << IRadioSignal::getSignalPartName(previousPart) << " as " << reception << endl;
-            EV_INFO << "Reception started: \x1b[1mignoring\x1b[0m " << (ISignal *)signal << " " << IRadioSignal::getSignalPartName(nextPart) << " as " << reception << endl;
+            EV_INFO << "Reception ended: \x1b[1mignoring\x1b[0m " << (IWirelessSignal *)signal << " " << IRadioSignal::getSignalPartName(previousPart) << " as " << reception << endl;
+            EV_INFO << "Reception started: \x1b[1mignoring\x1b[0m " << (IWirelessSignal *)signal << " " << IRadioSignal::getSignalPartName(nextPart) << " as " << reception << endl;
         }
         timer->setKind(nextPart);
         scheduleAt(arrival->getEndTime(nextPart), timer);
@@ -214,7 +291,7 @@ void LoRaRadio::endReception(cMessage *timer)
     if(iAmGateway)
     {
         auto part = (IRadioSignal::SignalPart)timer->getKind();
-        auto signal = static_cast<Signal *>(timer->getControlInfo());
+        auto signal = static_cast<WirelessSignal *>(timer->getControlInfo());
         auto arrival = signal->getArrival();
         auto reception = signal->getReception();
         std::list<cMessage *>::iterator it;
@@ -223,8 +300,9 @@ void LoRaRadio::endReception(cMessage *timer)
             auto transmission = signal->getTransmission();
             // TODO: this would draw twice from the random number generator in isReceptionSuccessful: auto isReceptionSuccessful = medium->isReceptionSuccessful(this, transmission, part);
             auto isReceptionSuccessful = medium->getReceptionDecision(this, signal->getListening(), transmission, part)->isReceptionSuccessful();
-            EV_INFO << "Reception ended: " << (isReceptionSuccessful ? "\x1b[1msuccessfully\x1b[0m" : "\x1b[1munsuccessfully\x1b[0m") << " for " << (ISignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
+            EV_INFO << "Reception ended: " << (isReceptionSuccessful ? "\x1b[1msuccessfully\x1b[0m" : "\x1b[1munsuccessfully\x1b[0m") << " for " << (IWirelessSignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
             auto macFrame = medium->receivePacket(this, signal);
+            take(macFrame);
             // TODO: FIXME: see handling packets with incorrect PHY headers in the TODO file
             decapsulate(macFrame);
             sendUp(macFrame);
@@ -232,7 +310,7 @@ void LoRaRadio::endReception(cMessage *timer)
             emit(receptionEndedSignal, check_and_cast<const cObject *>(reception));
         }
         else
-            EV_INFO << "Reception ended: \x1b[1mignoring\x1b[0m " << (ISignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
+            EV_INFO << "Reception ended: \x1b[1mignoring\x1b[0m " << (IWirelessSignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
 
         concurrentReceptions.remove(timer);
         updateReceptionTimer();
@@ -240,7 +318,7 @@ void LoRaRadio::endReception(cMessage *timer)
         updateTransceiverPart();
         delete timer;
         // TODO: move to radio medium
-        check_and_cast<RadioMedium *>(medium)->emit(IRadioMedium::signalArrivalEndedSignal, check_and_cast<const cObject *>(reception));
+        check_and_cast<RadioMedium *>(medium.get())->emit(IRadioMedium::signalArrivalEndedSignal, check_and_cast<const cObject *>(reception));
     }
     else
     {
@@ -257,10 +335,10 @@ void LoRaRadio::abortReception(cMessage *timer)
         for (it=concurrentReceptions.begin(); it!=concurrentReceptions.end(); it++)
         {
             auto timer = *it;
-            auto signal = static_cast<Signal *>(timer->getControlInfo());
+            auto signal = static_cast<WirelessSignal *>(timer->getControlInfo());
             auto part = (IRadioSignal::SignalPart)timer->getKind();
             auto reception = signal->getReception();
-            EV_INFO << "Reception \x1b[1maborted\x1b[0m: for " << (ISignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
+            EV_INFO << "Reception \x1b[1maborted\x1b[0m: for " << (IWirelessSignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
         }
         concurrentReceptions.clear();
         updateReceptionTimer();
@@ -307,6 +385,19 @@ void LoRaRadio::setLoRaCR(int LoRaCR)
     if(!mConfiguringRadio)
         emit(loraradio_datarate_changed, LoRaTransmitter->getPacketDataRate().get());
 }
+
+void LoRaRadio::setFHSSCR(lr_fhss_v1_cr_t FHSSCR)
+{
+    LoRaTransmitter->setFHSSCR(FHSSCR);
+    //if(!mConfiguringRadio) //TODO: how this can work for FHSS?
+    //    emit(loraradio_datarate_changed, LoRaTransmitter->getPacketDataRate().get());
+}
+
+lr_fhss_v1_cr_t LoRaRadio::getFHSSCR() const
+{
+    return LoRaTransmitter->getFHSSCR();
+}
+
 
 bps LoRaRadio::getPacketDataRate(const Packet *packet) const
 {

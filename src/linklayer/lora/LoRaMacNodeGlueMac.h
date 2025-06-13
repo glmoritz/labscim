@@ -31,12 +31,14 @@
 #include "inet/linklayer/base/MacProtocolBase.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/contract/IMacProtocol.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
 #include "../../common/LabscimConnector.h"
 #include "../../common/labscim_contiking_setup.h"
 #include "../../common/labscim-contiki-radio-protocol.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadioControlInfo_m.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadio.h"
+#include "../../common/labscim_sx126x.h"
+#include "../../common/lr_fhss_v1_base_types.h"
 
 using namespace inet;
 using namespace labscim;
@@ -96,8 +98,10 @@ public:
 
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, double value, cObject *details) override;
 
+    virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details) override;
 
 protected:
+
     std::string mNodeName;
 
     uint32_t nbBufferSize;
@@ -139,6 +143,11 @@ protected:
     inet::physicallayer::IRadio *radio;
     inet::physicallayer::IRadio::TransmissionState mTransmissionState;
 
+    simtime_t mLastRadioModeSwitch;
+    simtime_t mRadioModeTimes[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1];
+    simsignal_t mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1];
+    inet::physicallayer::IRadio::RadioMode mLastRadioMode;
+
     labscim::physicallayer::LoRaRadio* mLoRaRadio;
     bool mRadioConfigured;
 
@@ -157,6 +166,7 @@ protected:
 
 
     std::vector<std::string> mRegisteredSignals;
+    std::vector<uint64_t> mSubscribedSignals;
     cProperty *statisticTemplate;
 
     std::list<cMessage*> mScheduledTimerMsgs;
@@ -166,7 +176,7 @@ protected:
 
 protected:
     /** @brief Generate new interface address*/
-    virtual void configureInterfaceEntry() override;
+    virtual void configureNetworkInterface() override;
     virtual void handleCommand(cMessage *msg) {}
 
     void PerformRadioCommand(struct labscim_radio_command* cmd);

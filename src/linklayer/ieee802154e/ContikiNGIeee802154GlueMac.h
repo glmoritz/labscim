@@ -31,16 +31,15 @@
 #include "inet/linklayer/base/MacProtocolBase.h"
 #include "inet/linklayer/common/MacAddress.h"
 #include "inet/linklayer/contract/IMacProtocol.h"
-#include "inet/physicallayer/contract/packetlevel/IRadio.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
 #include "../../common/LabscimConnector.h"
 #include "../../common/labscim_contiking_setup.h"
 #include "../../common/labscim-contiki-radio-protocol.h"
 
 using namespace inet;
-using namespace labscim;
 
 
-namespace tsch {
+namespace labscim {
 
 /**
  * @brief Generic CSMA Mac-Layer.
@@ -98,6 +97,7 @@ public:
 
     /** @brief Handle control messages from lower layer */
     virtual void receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details) override;
+    virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details) override;
 
 
 protected:
@@ -111,7 +111,8 @@ protected:
     enum self_msgs {
         BOOT_MSG = 1,
         CONTIKI_TIMER_MSG = 2,
-        CCA_ENDED = 3
+        CCA_ENDED = 3,
+        EMIT_SIGNAL = 4
     };
 
     /*************************************************************/
@@ -121,6 +122,12 @@ protected:
     /** @brief The radio. */
     physicallayer::IRadio *radio;
     physicallayer::IRadio::TransmissionState transmissionState;
+
+    simtime_t mLastRadioModeSwitch;
+    simtime_t mRadioModeTimes[physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1];
+    simsignal_t mRadioModeTimesSignals[physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1];
+    physicallayer::IRadio::RadioMode mLastRadioMode;
+
 
     /** @brief Length of the header*/
     int headerLength;
@@ -139,6 +146,8 @@ protected:
     double txPower;
 
     std::vector<std::string> mRegisteredSignals;
+    std::vector<uint64_t> mSubscribedSignals;
+
     cProperty *statisticTemplate;
 
     std::string mNodeName;
@@ -156,9 +165,13 @@ protected:
     cMessage* mCCATimerMsg;
     uint32_t mTransmitRequestSeqNo;
 
+
+
 protected:
     /** @brief Generate new interface address*/
-    virtual void configureInterfaceEntry() override;
+    virtual void configureNetworkInterface() override;
+
+
     virtual void handleCommand(cMessage *msg) {}
 
     void PerformRadioCommand(struct labscim_radio_command* cmd);

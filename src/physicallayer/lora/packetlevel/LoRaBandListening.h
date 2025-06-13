@@ -16,7 +16,7 @@
 #ifndef LABSCIM_RADIORECORDER_H_
 #define LABSCIM_RADIORECORDER_H_
 
-#include "inet/physicallayer/common/packetlevel/BandListening.h"
+#include "inet/physicallayer/wireless/common/radio/packetlevel/BandListening.h"
 
 
 using namespace inet;
@@ -30,13 +30,16 @@ class INET_API LoRaBandListening : public BandListening
 {
   protected:
     const int LoRaSF;
+    const bool GatewayListening;
 
   public:
-    LoRaBandListening(const IRadio *radio, simtime_t startTime, simtime_t endTime, Coord startPosition, Coord endPosition, Hz centerFrequency, Hz bandwidth, int LoRaSF );
+    LoRaBandListening(const IRadio *radio, simtime_t startTime, simtime_t endTime, Coord startPosition, Coord endPosition, Hz centerFrequency, Hz bandwidth, int LoRaSF, bool GatewayListening );
 
-    virtual std::ostream& printToStream(std::ostream& stream, int level) const override;
+    virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;
 
     virtual int getLoRaSF() const { return LoRaSF; }
+
+    virtual int getIsGatewayListening() const { return GatewayListening; }
 };
 
 } // namespace physicallayer

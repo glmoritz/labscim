@@ -27,6 +27,9 @@
 #include <cassert>
 #include <math.h>
 
+#include "cryptopp/cryptlib.h"
+#include "cryptopp/sha.h"
+
 #include "LoRaMacNodeGlueMac.h"
 #include "inet/common/FindModule.h"
 #include "inet/common/INETMath.h"
@@ -41,30 +44,33 @@
 #include "inet/linklayer/common/MacAddressTag_m.h"
 #include "inet/linklayer/ieee802154/Ieee802154Mac.h"
 #include "inet/linklayer/ieee802154/Ieee802154MacHeader_m.h"
-#include "inet/physicallayer/contract/packetlevel/SignalTag_m.h"
-#include "inet/networklayer/common/InterfaceEntry.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/SignalTag_m.h"
+#include "inet/networklayer/common/NetworkInterface.h"
 #include "../../common/LabscimConnector.h"
 #include "../../common/labscim-lora-radio-protocol.h"
 #include "../../common/labscim_loramac_setup.h"
 #include "../../common/labscim_log.h"
 #include "../../common/labscim_socket.h"
-#include "../../common/sx126x_labscim.h"
+#include "../../common/labscim_sx126x.h"
+#include "../../common/cLabscimSignal.h"
 #include "../../physicallayer/lora/packetlevel/LoRaTags_m.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadioControlInfo_m.h"
 #include "../../physicallayer/lora/packetlevel/LoRaDimensionalTransmitter.h"
 #include "../../physicallayer/lora/packetlevel/LoRaDimensionalReceiver.h"
 #include "../../physicallayer/lora/packetlevel/LoRaRadio.h"
+#include "../../physicallayer/lora/packetlevel/LoRaFHSSHopEntry.h"
+
 
 using namespace inet::physicallayer;
 using namespace omnetpp;
 using namespace inet;
+using namespace CryptoPP;
 
 namespace labscim {
 
 Define_Module(LoRaMacNodeGlueMac);
 
-
-
+uint64_t gTimeReference = 0;
 
 void LoRaMacNodeGlueMac::initialize(int stage)
 {
@@ -78,6 +84,20 @@ void LoRaMacNodeGlueMac::initialize(int stage)
     }
     else if (stage == INITSTAGE_LINK_LAYER) {
         cModule *radioModule = getModuleFromPar<cModule>(par("radioModule"), this);
+
+        mLastRadioModeSwitch=0;
+        for(uint32_t i=0;i<inet::physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING+1;i++)
+        {
+            mRadioModeTimes[i]=0;
+        }
+        mLastRadioMode = inet::physicallayer::IRadio::RadioMode::RADIO_MODE_OFF;
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_OFF] = cComponent::registerSignal("radioOffTimeChanged");
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_SLEEP] = cComponent::registerSignal("radioSleepTimeChanged");
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_RECEIVER] = cComponent::registerSignal("radioRxTimeChanged");
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_TRANSMITTER] = cComponent::registerSignal("radioTxTimeChanged");
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_TRANSCEIVER] = cComponent::registerSignal("radioTxRxTimeChanged");
+        mRadioModeTimesSignals[inet::physicallayer::IRadio::RadioMode::RADIO_MODE_SWITCHING] = cComponent::registerSignal("radioSwitchingTimeChanged");
+
         radioModule->subscribe(IRadio::radioModeChangedSignal, this);
         radioModule->subscribe(IRadio::transmissionStateChangedSignal, this);
         radioModule->subscribe(labscim::physicallayer::LoRaRadio::loraradio_datarate_changed, this);
@@ -111,13 +131,13 @@ void LoRaMacNodeGlueMac::initialize(int stage)
         cMessage* BootMsg;
         std::string cmd("");
         std::stringstream stream;
-        stream << "node-" << std::hex << interfaceEntry->getMacAddress().getInt();
+        stream << "node-" << std::hex << networkInterface->getMacAddress().getInt();
         mNodeName = std::string(stream.str() );
 
         std::string MemoryName = std::string("labscim-") + mNodeName + std::string("-") + GenerateRandomString(16);
 
         nbBufferSize = par("SocketBufferSize").intValue();
-        interfaceEntry->setDatarate(mLoRaRadio->getPacketDataRate().get());
+        networkInterface->setDatarate(mLoRaRadio->getPacketDataRate().get());
 
         if(!par("NodeDebug").boolValue())
         {
@@ -156,7 +176,8 @@ void LoRaMacNodeGlueMac::initialize(int stage)
 
 void LoRaMacNodeGlueMac::finish()
 {
-
+    mRadioModeTimes[mLastRadioMode] += simTime() - mLastRadioModeSwitch;
+    emit(mRadioModeTimesSignals[mLastRadioMode], mRadioModeTimes[mLastRadioMode]);
 }
 
 LoRaMacNodeGlueMac::~LoRaMacNodeGlueMac()
@@ -176,22 +197,22 @@ LoRaMacNodeGlueMac::~LoRaMacNodeGlueMac()
     }
 }
 
-void LoRaMacNodeGlueMac::configureInterfaceEntry()
+void LoRaMacNodeGlueMac::configureNetworkInterface()
 {
     MacAddress address = parseMacAddressParameter(par("address"));
 
     // data rate
     const double EstimatedDataRate =  5469; //SF7 @ 125kHz -> will be adjusted upon radio configuration
-    interfaceEntry->setDatarate(EstimatedDataRate);
+    networkInterface->setDatarate(EstimatedDataRate);
 
     // generate a link-layer address to be used as interface token for IPv6
-    interfaceEntry->setMacAddress(address);
-    interfaceEntry->setInterfaceToken(address.formInterfaceIdentifier());
+    networkInterface->setMacAddress(address);
+    networkInterface->setInterfaceToken(address.formInterfaceIdentifier());
 
     // capabilities
-    interfaceEntry->setMtu(par("mtu"));
-    interfaceEntry->setMulticast(true);
-    interfaceEntry->setBroadcast(true);
+    networkInterface->setMtu(par("mtu"));
+    networkInterface->setMulticast(true);
+    networkInterface->setBroadcast(true);
 }
 
 /**
@@ -275,6 +296,8 @@ void LoRaMacNodeGlueMac::configureRadio(Hz CenterFrequency, Hz Bandwidth, W Powe
 
 void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
 {
+
+    //FREQ_STEP_SX1261_2 = 0.95367431640625
     switch(cmd->radio_command)
     {
     case LORA_RADIO_SEND:
@@ -285,7 +308,7 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
         std::vector<uint8_t> vec(payload->Message, payload->Message + payload->MessageSize_bytes);
         dataMessage->setBytes(vec);
         cmsg->addTag<CreationTimeTag>()->setCreationTime(simTime());
-        cmsg->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ieee802154);
+        cmsg->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::unknown);
         cmsg->insertAtBack(dataMessage);
 
         radio->setRadioMode(IRadio::RADIO_MODE_TRANSMITTER);
@@ -377,22 +400,27 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
             mRadioConfigured = true;
             radioModule->subscribe(IRadio::receptionStateChangedSignal, this);
         }
-        if(modem_type->Modem!=1)
-        {
-            throw cRuntimeError("Only LoRa Modulation is Supported by this module");
-        }
+        mLoRaRadio->setLoRaModulationMode((sx126x_pkt_types_e)modem_type->Modem);
         free(cmd);
+        break;
+    }
+    case LORA_RADIO_SET_POWER:
+    {
+        struct lora_set_power* sp = (struct lora_set_power*)cmd->radio_struct;
+        auto configureCommand = new ConfigureLoRaRadioCommand();
+        configureCommand->setPower(mW(dBmW2mW(sp->Power_dbm)));
+        free(cmd);
+        configureRadio(configureCommand);
         break;
     }
     case LORA_RADIO_SET_MODULATION_PARAMS:
     {
         struct lora_set_modulation_params* mp = (struct lora_set_modulation_params*)cmd->radio_struct;
         auto configureCommand = new ConfigureLoRaRadioCommand();
-        configureCommand->setPower(mW(dBmW2mW(mp->TransmitPower_dBm)));
-        configureCommand->setLoRaSF(mp->ModulationParams.Params.LoRa.SpreadingFactor);
-        configureCommand->setLoRaCR(mp->ModulationParams.Params.LoRa.CodingRate);
-        configureCommand->setLowDataRate_optimization(mp->ModulationParams.Params.LoRa.LowDatarateOptimize);
-        configureCommand->setBandwidth(Hz(labscim::physicallayer::LoRaDimensionalTransmitter::RadioGetLoRaBandwidthInHz(mp->ModulationParams.Params.LoRa.Bandwidth)));
+        configureCommand->setLoRaSF(mp->ModulationParams.sf);
+        configureCommand->setLoRaCR(mp->ModulationParams.cr);
+        configureCommand->setLowDataRate_optimization(mp->ModulationParams.ldro);
+        configureCommand->setBandwidth(Hz(labscim::physicallayer::LoRaDimensionalTransmitter::RadioGetLoRaBandwidthInHz(mp->ModulationParams.bw)));
         free(cmd);
         configureRadio(configureCommand);
         break;
@@ -401,10 +429,23 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
     {
         struct lora_set_packet_params* pp = (struct lora_set_packet_params*)cmd->radio_struct;
         auto configureCommand = new ConfigureLoRaRadioCommand();
-        configureCommand->setHeader_enabled(pp->PacketParams.Params.LoRa.HeaderType);
-        configureCommand->setPayload_length(pp->PacketParams.Params.LoRa.PayloadLength);
-        configureCommand->setCRC_enabled(pp->PacketParams.Params.LoRa.CrcMode);
-        configureCommand->setPreamble_length(pp->PacketParams.Params.LoRa.PreambleLength);
+        configureCommand->setHeader_enabled(pp->PacketParams.header_type);
+        configureCommand->setPayload_length(pp->PacketParams.pld_len_in_bytes);
+        configureCommand->setCRC_enabled(pp->PacketParams.crc_is_on);
+        configureCommand->setPreamble_length(pp->PacketParams.preamble_len_in_symb);
+        free(cmd);
+        configureRadio(configureCommand);
+        break;
+    }
+    case LORA_RADIO_SET_FHSS_PARAMS:
+    {
+        struct lora_set_fhss_params* fp = (struct lora_set_fhss_params*)cmd->radio_struct;
+        auto configureCommand = new ConfigureLoRaRadioCommand();
+        configureCommand->setCenterFrequency(Hz(fp->FHSSParams.center_freq_in_pll_steps*labscim::physicallayer::PLL_STEP_IN_HZ));
+        configureCommand->setFHSSBW(fp->FHSSParams.lr_fhss_params.bw);
+        configureCommand->setFHSSCR(fp->FHSSParams.lr_fhss_params.cr);
+        configureCommand->setFHSSGrid(fp->FHSSParams.lr_fhss_params.grid);
+
         free(cmd);
         configureRadio(configureCommand);
         break;
@@ -462,6 +503,19 @@ void LoRaMacNodeGlueMac::PerformRadioCommand(struct labscim_radio_command* cmd)
         configureRadio(configureCommand);
         break;
     }
+    case LORA_RADIO_SET_HOPPING:
+    {
+        struct lora_set_hopping* lsh =  (struct lora_set_hopping*)cmd->radio_struct;
+        std::vector<labscim::physicallayer::LoRaFHSSHopEntry> Hops;
+        for(uint32_t i=0;i < lsh->num_hops;i++)
+        {
+            Hops.push_back(labscim::physicallayer::LoRaFHSSHopEntry(lsh->hops[i].nb_symbols, lsh->hops[i].freq_in_pll_steps,lsh->num_headers>i));
+        }
+
+        mLoRaRadio->setHoppingSequence(Hops);
+        free(cmd);
+        break;
+    }
     default:
     {
         free(cmd);
@@ -484,6 +538,7 @@ cMessage* LoRaMacNodeGlueMac::GetScheduledTimeEvent(uint32_t sequence_number)
             }
         }
     }
+    //EV_ERROR << "Could not find timer";
     return nullptr;
 }
 
@@ -535,23 +590,29 @@ void LoRaMacNodeGlueMac::ProcessCommands()
                     if(ste->is_relative)
                     {
 #ifdef LABSCIM_LOG_COMMANDS
-                        sprintf(log,"seq%4d\tSET_TIME_EVENT\n",hdr->sequence_number);
+                        sprintf(log,"seq%4d\tSET_TIME_EVENT,%s, %f\n",hdr->sequence_number,mNodeName,  (us + (double)ste->time_us ) / 1000000);
 #endif
-                        scheduleAt((us + (double)ste->time_us)/1000000, TimeEventMsg);
+
+
                         mScheduledTimerMsgs.push_front(TimeEventMsg);
+                        scheduleAt((us + (double)ste->time_us)/1000000, TimeEventMsg);
                     }
                     else
                     {
                         if(ste->time_us >= us)
                         {
 #ifdef LABSCIM_LOG_COMMANDS
-                            sprintf(log,"seq%4d\tSET_TIME_EVENT\n",hdr->sequence_number);
+                            sprintf(log,"seq%4d\tSET_TIME_EVENT, %s, %f\n",hdr->sequence_number, mNodeName, ste->time_us);
 #endif
-                            scheduleAt((double)ste->time_us/1000000, TimeEventMsg);
                             mScheduledTimerMsgs.push_front(TimeEventMsg);
+                            scheduleAt((double)ste->time_us/1000000, TimeEventMsg);
                         }
                         else
                         {
+                            EV_ERROR << "scheduling a past timer";
+#ifdef LABSCIM_LOG_COMMANDS
+                            sprintf(log,"seq%4d\tSET_TIME_EVENT, %s, %f, ERROR - PAST TIMER\n",hdr->sequence_number, mNodeName, ste->time_us);
+#endif
                             free(cmd);
                             delete TimeEventMsg;
                         }
@@ -569,8 +630,16 @@ void LoRaMacNodeGlueMac::ProcessCommands()
                         free(to_be_cancelled->getContextPointer());
                         delete(to_be_cancelled);
 #ifdef LABSCIM_LOG_COMMANDS
-                        sprintf(log,"seq%4d\tCANCEL_TIME_EVENT\n",hdr->sequence_number);
+                        sprintf(log,"seq%4d\tCANCEL_TIME_EVENT, event %d,OK, %s\n",hdr->sequence_number,cte->cancel_sequence_number,mNodeName);
 #endif
+                    }
+                    else
+                    {
+#ifdef LABSCIM_LOG_COMMANDS
+                        sprintf(log,"seq%4d\tCANCEL_TIME_EVENT, event %d, NOT FOUND, %s\n",hdr->sequence_number, cte->cancel_sequence_number, mNodeName);
+#endif
+
+                        //EV_ERROR << "Nullptr on cancel time event";
                     }
                     free(cte);
                     break;
@@ -584,7 +653,7 @@ void LoRaMacNodeGlueMac::ProcessCommands()
                     //EV_DEBUG << (uint8_t*)stream.str().c_str();
 #ifdef LABSCIM_LOG_COMMANDS
                     sprintf(log,"seq%4d\tPRINT_MESSAGE\n",hdr->sequence_number);
-                    Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
+                    //Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
 #endif
                     free(hdr);
                     break;
@@ -608,14 +677,37 @@ void LoRaMacNodeGlueMac::ProcessCommands()
                     free(cmd);
                     break;
                 }
-                case LABSCIM_SIGNAL_EMIT:
+                case LABSCIM_SIGNAL_SUBSCRIBE:
                 {
-                    struct labscim_signal_emit* emit_signal = (struct labscim_signal_emit*)cmd;
+                    struct labscim_signal_subscribe* sub = (struct labscim_signal_subscribe*)cmd;
+                    getSimulation()->getSystemModule()->subscribe(sub->signal_id, this);
+                    mSubscribedSignals.push_back(sub->signal_id);
 #ifdef LABSCIM_LOG_COMMANDS
-                    sprintf(log,"seq%4d\tLABSCIM_SIGNAL_EMIT\n",hdr->sequence_number);
+                    sprintf(log,"seq%4d\tLABSCIM_SIGNAL_SUBSCRIBE\n",hdr->sequence_number);
+#endif
+                    free(cmd);
+                    break;
+                }
+                case LABSCIM_SIGNAL_EMIT_DOUBLE:
+                {
+                    struct labscim_signal_emit_double* emit_signal = (struct labscim_signal_emit_double *)cmd;
+#ifdef LABSCIM_LOG_COMMANDS
+                    sprintf(log,"seq%4d\tLABSCIM_SIGNAL_EMIT_DOUBLE\n",hdr->sequence_number);
 #endif
                     EV_DEBUG << "Emmiting " << getSignalName(emit_signal->signal_id) << ". Value: " << emit_signal->value;
                     emit(emit_signal->signal_id, emit_signal->value);
+                    free(cmd);
+                    break;
+                }
+                case LABSCIM_SIGNAL_EMIT_CHAR:
+                {
+                    struct labscim_signal_emit_char* emit_signal = (struct labscim_signal_emit_char *)cmd;
+#ifdef LABSCIM_LOG_COMMANDS
+                    sprintf(log,"seq%4d\tLABSCIM_SIGNAL_EMIT_CHAR\n",hdr->sequence_number);
+#endif
+                    cLabscimSignal sig(emit_signal->signal_id, emit_signal->string,emit_signal->string_size);
+                    EV_DEBUG << "Emmiting " << getSignalName(emit_signal->signal_id) << ". Value: (binary string)";
+                    emit(emit_signal->signal_id, &sig);
                     free(cmd);
                     break;
                 }
@@ -663,25 +755,45 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
     bool WaitForCommand = true;
     mCurrentProcessingMsg=msg;
 
+#ifdef LABSCIM_LOG_COMMANDS
+        char log[128];
+        log[0] = 0;
+#endif
+
     //EV_DETAIL << "It is wakeup time." << endl;
     switch(msg->getKind())
     {
     case BOOT_MSG:
     {
+
         struct loramac_node_setup setup_msg;
+        SHA1 hash;
+        CryptoPP::byte digest[40];
+        hash.Update((const CryptoPP::byte*)mNodeName.c_str(), mNodeName.size());
+        hash.Final(digest);
+        memcpy(setup_msg.AppKey, digest, 32);
         setup_msg.output_logs = par("OutputLogs").boolValue()?1:0;
-        setup_msg.IsMaster = par("IsMaster").boolValue()?1:0;
         //EV_DETAIL << "Boot Message." << endl;
         memset(setup_msg.mac_addr, 0, sizeof(setup_msg.mac_addr));
-        interfaceEntry->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
+        networkInterface->getMacAddress().getAddressBytes(setup_msg.mac_addr+(sizeof(setup_msg.mac_addr)-MAC_ADDRESS_SIZE));
         setup_msg.startup_time = (uint64_t)(simTime().dbl() * 1000000);
+        setup_msg.ResquestDownstream = par("RequestDownstream").boolValue()?1:0;
+        setup_msg.PacketGenerationRate = par("PacketGenerationRate").doubleValue();
+        if(gTimeReference == 0)
+        {
+            struct timeval tv;
+            gettimeofday(&tv,NULL);
+            gTimeReference = (tv.tv_sec * 1000000) + tv.tv_usec - setup_msg.startup_time;
+        }
 #ifdef LABSCIM_LOG_COMMANDS
         std::stringstream stream;
         stream << "BOOT\n";
         Node_Log(simTime().dbl(), getId(), (uint8_t*)stream.str().c_str());
         EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
+        setup_msg.TimeReference = gTimeReference;
         SendProtocolBoot((void*)&setup_msg,sizeof(struct loramac_node_setup));
+
         delete msg;
         break;
     }
@@ -693,11 +805,21 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
         {
             struct labscim_set_time_event* ste = (struct labscim_set_time_event*)msg->getContextPointer();
             SendTimeEvent(ste->hdr.sequence_number, ste->time_event_id,us);
+#ifdef LABSCIM_LOG_COMMANDS
+            {
+                char log[256];
+                sprintf(log,"\tTIME_EVENT, %s, event, %d, time %f\n", mNodeName,ste->hdr.sequence_number,us);
+            }
+#endif
             mScheduledTimerMsgs.remove(msg);
             free(ste);
         }
         else
         {
+#ifdef LABSCIM_LOG_COMMANDS
+            sprintf(log,"\tTIME_EVENT, %s, nullptr time msg\n", mNodeName);
+#endif
+            EV_ERROR << "Nullptr on loramac timer msg";
             WaitForCommand = false;
         }
         delete msg;
@@ -815,6 +937,12 @@ void LoRaMacNodeGlueMac::handleSelfMessage(cMessage *msg)
         break;
     }
     }
+#ifdef LABSCIM_LOG_COMMANDS
+    if(log[0]!=0)
+    {
+        labscim_log(log, "pro ");
+    }
+#endif
 
     if(WaitForCommand)
     {
@@ -902,7 +1030,6 @@ void LoRaMacNodeGlueMac::handleLowerPacket(Packet *packet)
     {
         if(radio->getRadioMode()!=IRadio::RADIO_MODE_RECEIVER)
         {
-            //no timer msgs should be received here, but we set radio to receiver just in case
             radio->setRadioMode(IRadio::RADIO_MODE_RECEIVER);
         }
         mRX_fsm = RX_CONTINUOUS_LISTENING;
@@ -928,9 +1055,27 @@ void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID,
 {
     if(signalID == labscim::physicallayer::LoRaRadio::loraradio_datarate_changed)
     {
-        interfaceEntry->setDatarate(value);
+        networkInterface->setDatarate(value);
     }
 }
+
+void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj, cObject *details)
+{
+    Enter_Method_Silent();
+    MacProtocolBase::receiveSignal(source, signalID, obj, details);
+    if(std::find(mSubscribedSignals.begin(), mSubscribedSignals.end(), signalID) != mSubscribedSignals.end())
+    {
+        cLabscimSignal* sig = dynamic_cast<cLabscimSignal*>(obj);
+        if(sig)
+        {
+            char Msg[256];
+            sig->getMessage(Msg,256);
+            SendSignal(signalID, (uint64_t)std::round((simTime().dbl() * 1000000)), Msg, sig->getMessageSize()<256?sig->getMessageSize():256);
+        }
+        ProcessCommands();
+    }
+}
+
 
 void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID, intval_t value, cObject *details)
 {
@@ -983,6 +1128,20 @@ void LoRaMacNodeGlueMac::receiveSignal(cComponent *source, simsignal_t signalID,
             EV_DEBUG << (uint8_t*)stream.str().c_str();
 #endif
             ProcessCommands();
+        }
+    }
+    else if (signalID == IRadio::radioModeChangedSignal)
+    {
+        IRadio::RadioMode newRadioMode = static_cast<IRadio::RadioMode>(value);
+        if(mLastRadioMode != newRadioMode)
+        {
+            if (simTime() >= getSimulation()->getWarmupPeriod())
+            {
+                mRadioModeTimes[mLastRadioMode] += simTime() - mLastRadioModeSwitch;
+                emit(mRadioModeTimesSignals[mLastRadioMode], mRadioModeTimes[mLastRadioMode]);
+            }
+            mLastRadioModeSwitch = simTime();
+            mLastRadioMode = newRadioMode;
         }
     }
 }

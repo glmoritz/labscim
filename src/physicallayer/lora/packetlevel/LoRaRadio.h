@@ -18,10 +18,13 @@
 #ifndef __LABSCIM_LORARADIO_H
 #define __LABSCIM_LORARADIO_H
 
-#include "inet/physicallayer/base/packetlevel/ApskModulationBase.h"
-#include "inet/physicallayer/base/packetlevel/FlatRadioBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/ApskModulationBase.h"
+#include "inet/physicallayer/wireless/common/base/packetlevel/FlatRadioBase.h"
 #include "LoRaDimensionalReceiver.h"
 #include "LoRaDimensionalTransmitter.h"
+#include "../../../common/labscim_sx126x.h"
+#include "../../../common/lr_fhss_v1_base_types.h"
+#include "LoRaFHSSHopEntry.h"
 
 using namespace inet;
 using namespace inet::physicallayer;
@@ -71,6 +74,16 @@ class INET_API LoRaRadio : public FlatRadioBase
     virtual void setLoRaSF(int LoRaSF);
 
     virtual void setLoRaCR(int LoRaCR);
+
+    virtual lr_fhss_v1_cr_t getFHSSCR() const;
+    virtual void setFHSSCR(lr_fhss_v1_cr_t FHSSCR);
+
+    virtual void setHoppingSequence(std::vector<LoRaFHSSHopEntry>& HopTable);
+
+    virtual void setLoRaModulationMode(sx126x_pkt_types_e mode);
+    virtual sx126x_pkt_types_e getLoRaModulationMode();
+
+    static Hz FHSSBandwidthToHz(lr_fhss_v1_bw_t bw);
 
   private:
     static bool compareArrivals(cMessage* i1, cMessage* i2);

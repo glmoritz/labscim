@@ -17,7 +17,7 @@
 
 package labscim.physicallayer.energyconsumer;
 
-import inet.physicallayer.energyconsumer.StateBasedEpEnergyConsumer;
+import inet.physicallayer.wireless.common.energyconsumer.StateBasedEpEnergyConsumer;
 
 //
 // This module provides a radio power consumer model. The power consumption is

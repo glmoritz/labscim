@@ -20,19 +20,19 @@
 package labscim.linklayer.ieee802154e;
 
 import inet.linklayer.contract.IWirelessInterface;
-import inet.networklayer.common.InterfaceEntry;
-import inet.physicallayer.contract.packetlevel.IRadio;
-import labscim.linklayer.ieee802154e.ContikiNGIeee802154GlueMac;
+import inet.networklayer.common.NetworkInterface;
+import inet.physicallayer.wireless.common.contract.packetlevel.IRadio;
+import inet.queueing.contract.IPacketQueue;
 
 
-module ContikiNGInterface extends InterfaceEntry like IWirelessInterface
+module ContikiNGInterface extends NetworkInterface like IWirelessInterface
 {
     parameters:
-        @class(inet::InterfaceEntry);
+        @class(inet::NetworkInterface);
         string interfaceTableModule;
         string energySourceModule = default("");
-        *.interfaceTableModule = default(absPath(interfaceTableModule));
-        *.energySourceModule = default(absPath(energySourceModule));
+        *.interfaceTableModule = default(absPath(this.interfaceTableModule));
+        *.energySourceModule = default(absPath(this.energySourceModule));
         @display("i=block/ifcard");
     gates:
         input upperLayerIn;

@@ -20,13 +20,14 @@ namespace labscim {
 namespace physicallayer {
 
 
-LoRaBandListening::LoRaBandListening(const IRadio *radio, simtime_t startTime, simtime_t endTime, Coord startPosition, Coord endPosition, Hz centerFrequency, Hz bandwidth, int LoRaSF) :
+LoRaBandListening::LoRaBandListening(const IRadio *radio, simtime_t startTime, simtime_t endTime, Coord startPosition, Coord endPosition, Hz centerFrequency, Hz bandwidth, int LoRaSF, bool GatewayListening) :
     BandListening(radio, startTime, endTime, startPosition, endPosition, centerFrequency, bandwidth),
-    LoRaSF(LoRaSF)
+    LoRaSF(LoRaSF),
+    GatewayListening(GatewayListening)
 {
 }
 
-std::ostream& LoRaBandListening::printToStream(std::ostream& stream, int level) const
+std::ostream& LoRaBandListening::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     stream << "LoRaBandListening";
     if (level <= PRINT_LEVEL_DETAIL)

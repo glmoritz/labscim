@@ -18,7 +18,7 @@
 
 package labscim.physicallayer.lora.packetlevel;
 
-import inet.physicallayer.base.packetlevel.FlatRadioBase;
+import inet.physicallayer.wireless.common.base.packetlevel.FlatRadioBase;
 
 module LoRaRadio extends FlatRadioBase
 {
@@ -26,8 +26,18 @@ module LoRaRadio extends FlatRadioBase
         int LoRaSF;
         int LoRaCR;
         bool iAmGateway;
-        @signal[loraradio_datarate_changed](type=double);        
-        @statistic[meanSnirdB](title="Mean SNIR dB"; source=meanSnirdB(packetSentToUpper); record=histogram,vector);
+        @signal[loraradio_datarate_changed](type=double);                
+        
+        @statistic[meanSnirdB](title="Mean SNIR dB"; source=meanSnirdB(packetSentToUpper); record=histogram,vector?);        
+        //@statistic[rxSF](title="SF from received packets (SF)"; source=LoRaSFFromReception(receptionStarted); record=histogram,vector);
+        @statistic[rxDR](title="LoRa AU915 Datarate from received packets"; source=LoRaDRAU915FromReception(receptionEnded); record=histogram,vector?);
+        //@statistic[rxBandwidth](title="Bandwidth from received packets (Hz)"; source=LoRaBWFromReception(receptionStarted); record=histogram,vector);        
+        
+        //@statistic[txSF](title="SF from transmitted packets (SF)"; source=LoRaSFFromTransmission(transmissionStarted); record=histogram,vector);
+        //@statistic[txBandwidth](title="Bandwidth from transmitted packets (Hz)"; source=LoRaBWFromTransmission(transmissionStarted); record=histogram,vector);
+        @statistic[txPower](title="Power from transmitted packets (Hz)"; source=LoRaPowerFromTransmission(transmissionEnded); record=histogram,vector?);
+        @statistic[txDR](title="LoRa AU915 Datarate from transmitted packets"; source=LoRaDRAU915FromTransmission(transmissionEnded); record=histogram,vector?);        
+
         
         string signalAnalogRepresentation @enum("scalar", "dimensional") = default("dimensional");
         transmitter.typename = default(signalAnalogRepresentation == "scalar" ? "Ieee802154ScalarTransmitter" : signalAnalogRepresentation == "dimensional" ? "LoRaDimensionalTransmitter" : "");

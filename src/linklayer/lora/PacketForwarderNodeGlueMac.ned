@@ -35,13 +35,21 @@ import inet.linklayer.contract.IMacProtocol;
 //
 module PacketForwarderNodeGlueMac extends MacProtocolBase like IMacProtocol
 {
-    parameters:
+    parameters:                
+        @statistic[LoRaUpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaUpstreamPacketError](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaDownstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
+        
+        @statistic[LoRaDownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaDownstreamAoIArea](record=histogram,vector?; interpolationmode=none);        
+        
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
         bool IsMQTTLogger = default(false); //the buffer size for socket connection with contiking instance
         string MQTTLoggerIPAddress = default("localhost"); // address of the mqtt broker used by app server
         string MQTTLoggerApplicationTopic = default("application/1/device/#"); // mqtt topic used by the lora application
         
-        volatile double BootTime @unit(s) = default(0); //time to boot up the node 
+        volatile double BootTime @unit(s) = default(0 s); //time to boot up the node 
                 
         string address = default("auto"); // MAC address as hex string (12 hex digits), or
                                           // "auto". "auto" values will be replaced by

@@ -22,7 +22,14 @@ module LabscimRadioRecorder
 {
     parameters:
         string LogName = default("spectrumlog.txt");
+        string SpectrumLogName = default("spectrumlog2.txt");
+        
+        string SpectrumRadioReceiverPath = default(""); //if a value is provided, received spectrum from this radio will be plotted as well
+        double SpectrumRecorderLowerThreshold @unit(dBmWpMHz) = default(-170 dBmWpMHz);
+        double SpectrumRecorderUpperThreshold @unit(dBmWpMHz) = default(30 dBmWpMHz);
+        
         bool EnableLog = default(false);
+        
         @class(labscim::physicallayer::LabscimRadioRecorder);
 }
 

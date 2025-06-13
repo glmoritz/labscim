@@ -36,9 +36,36 @@ import inet.linklayer.contract.IMacProtocol;
 module LoRaMacNodeGlueMac extends MacProtocolBase like IMacProtocol
 {
     parameters:
+        @statistic[LoRaUpstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamPacketLatency](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaNodeJoin](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaPacketRTT](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaUpstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaUpstreamAoIArea](record=histogram,sum,vector?; interpolationmode=none);  
+        
+        @statistic[radioOffTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
+        @statistic[radioSleepTimeChanged](record=last,vector?; interpolationmode=sample-hold);        
+        @statistic[radioRxTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
+        @statistic[radioTxTimeChanged](record=last,vector?; interpolationmode=sample-hold);        
+        @statistic[radioTxRxTimeChanged](record=last,vector?; interpolationmode=sample-hold);                
+        @statistic[radioSwitchingTimeChanged](record=last,vector?; interpolationmode=sample-hold);
+        
+        @statistic[LoRaClassA](record=last,vector; interpolationmode=sample-hold);
+        @statistic[LoRaClassB](record=last,vector; interpolationmode=sample-hold);
+        @statistic[LoRaClassC](record=last,vector; interpolationmode=sample-hold);
+        
+        @statistic[LoRaDownstreamPacketGenerated](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaDownstreamPacketLatency](record=histogram,vector?; interpolationmode=none);        
+        
+        @statistic[LoRaDownstreamAoIMax](record=histogram,vector?; interpolationmode=none);
+        @statistic[LoRaDownstreamAoIMin](record=histogram,vector?; interpolationmode=none);        
+        @statistic[LoRaDownstreamAoIArea](record=histogram,sum,vector?; interpolationmode=none); 
+        
+        
         int SocketBufferSize = default(512); //the buffer size for socket connection with contiking instance
         
-        volatile double BootTime @unit(s) = default(0); //time to boot up the node 
+        volatile double BootTime @unit(s) = default(0 s); //time to boot up the node 
                 
         string address = default("auto"); // MAC address as hex string (12 hex digits), or
                                           // "auto". "auto" values will be replaced by
@@ -50,7 +77,10 @@ module LoRaMacNodeGlueMac extends MacProtocolBase like IMacProtocol
 		bool NodeDebug = default(false); // Command to be executed in the remote host to spawn the upper layer process
 		bool IsMaster = default(false); // Is master of pingpong process
 		bool OutputLogs = default(false); // If true, contiki will write its printfs to a file
-		int NodeProcessConnectionPort = default(9608);//The default TCP port that will be used for connection                                          
+		int NodeProcessConnectionPort = default(9608);//The default TCP port that will be used for connection    
+		
+		bool RequestDownstream = default(false);                                      
+		double PacketGenerationRate @unit(s) = default(60 s);
                                           
         // length of MAC header
         int headerLength @unit(b) = default(72 b);

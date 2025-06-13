@@ -7,6 +7,7 @@
 
 #include "LabscimConnector.h"
 #include <string>
+#include <errno.h>
 #include <iostream>
 #include <stdexcept>
 #include <stdio.h>
@@ -23,7 +24,9 @@ std::string LabscimConnector::ExecuteCommand(const char* cmd)
     FILE* pipe = popen(cmd, "r");
     if (!pipe)
     {
-        throw std::runtime_error("popen() failed!");
+        char err[256];
+        sprintf(err, "popen() failed (%s)!",strerror(errno));
+        throw std::runtime_error(err);
     }
     try
     {
@@ -56,6 +59,7 @@ LabscimConnector::~LabscimConnector()
 
     if(mNodeOutputBuffer!=mNodeInputBuffer)
     {
+        end_simulation(mNodeInputBuffer);
         labscim_buffer_deinit(mNodeInputBuffer, 1);
         delete mNodeInputBuffer;
     }
@@ -228,6 +232,12 @@ void LabscimConnector::SendTimeEvent(uint32_t SequenceNumber, uint32_t TimeEvent
 void LabscimConnector::SendRadioResponse(uint16_t RadioResponse, uint64_t CurrentTime, void* RadioStruct, size_t RadioStructLen, uint32_t SequenceNumber)
 {
     radio_response(mNodeInputBuffer, RadioResponse, CurrentTime, RadioStruct, RadioStructLen, SequenceNumber);
+}
+
+void LabscimConnector::SendSignal(uint64_t Signal, uint64_t CurrentTime, void* SignalStruct, size_t SignalStructLen)
+{
+    send_signal(mNodeInputBuffer, Signal, CurrentTime, SignalStruct, SignalStructLen);
+    //radio_response(mNodeInputBuffer, (uint16_t)Signal, CurrentTime, SignalStruct, SignalStructLen, 5);
 }
 
 

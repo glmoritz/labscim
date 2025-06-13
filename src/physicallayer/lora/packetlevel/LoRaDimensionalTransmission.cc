@@ -15,7 +15,7 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/physicallayer/analogmodel/packetlevel/DimensionalTransmission.h"
+#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
 #include "inet/common/Units.h"
 #include "LoRaDimensionalTransmission.h"
 
@@ -27,14 +27,16 @@ namespace labscim {
 
 namespace physicallayer {
 
-LoRaDimensionalTransmission::LoRaDimensionalTransmission(const IRadio *transmitter, const Packet *packet, const simtime_t startTime, const simtime_t endTime, const simtime_t preambleDuration, const simtime_t headerDuration, const simtime_t dataDuration, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, const IModulation *modulation, b headerLength, b dataLength, Hz centerFrequency, Hz bandwidth, bps bitrate, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& power, int LoRaSF, int LoRaCR) :
+LoRaDimensionalTransmission::LoRaDimensionalTransmission(const IRadio *transmitter, const Packet *packet, const simtime_t startTime, const simtime_t endTime, const simtime_t preambleDuration, const simtime_t headerDuration, const simtime_t dataDuration, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, const IModulation *modulation, b headerLength, b dataLength, Hz centerFrequency, Hz bandwidth, bps bitrate, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& power, int LoRaSF, int LoRaCR, W LoRaTransmissionPower, bool IsUplink) :
     DimensionalTransmission(transmitter, packet, startTime, endTime, preambleDuration, headerDuration, dataDuration, startPosition, endPosition, startOrientation, endOrientation, modulation, headerLength, dataLength, centerFrequency, bandwidth, bitrate, power),
     LoRaSF(LoRaSF),
-    LoRaCR(LoRaCR)
+    LoRaCR(LoRaCR),
+    TransmissionPower(LoRaTransmissionPower),
+    Uplink(IsUplink)
 {
 }
 
-std::ostream& LoRaDimensionalTransmission::printToStream(std::ostream& stream, int level) const
+std::ostream& LoRaDimensionalTransmission::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     stream << "LoRaDimensionalTransmission";
     if (level <= PRINT_LEVEL_DEBUG)

@@ -17,8 +17,8 @@
 
 import inet.common.INETDefs;
 import inet.common.Units;
-import inet.physicallayer.contract.packetlevel.IModulation;
-import inet.physicallayer.contract.packetlevel.RadioControlInfo;
+import inet.physicallayer.wireless.common.contract.packetlevel.IModulation;
+import inet.physicallayer.wireless.common.contract.packetlevel.RadioControlInfo;
 //import inet.physicallayer.contract.packetlevel.ConfigureRadioCommand;
 
 
@@ -35,5 +35,8 @@ class ConfigureLoRaRadioCommand extends ConfigureRadioCommand
     int Header_enabled = -1;
     int LowDataRate_optimization = -1;  
     int Preamble_length = -1;
-    int Payload_length = -1;
+    int Payload_length = -1;        
+    int FHSSCR = -1;                  // new lora radio FHSS CR or -1 if not set.
+    int FHSSBW = -1;                  // new lora FHSS Bandwidth index or -1 if not set.
+    int FHSSGrid = -1;				// new lora FHSS grid index or -1 if not set.
 }
