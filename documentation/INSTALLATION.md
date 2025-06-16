@@ -8,6 +8,8 @@ Download the Linux version of OMNeT++ 6.0.3 from the [official website](https://
 ## Step 2: Update Ubuntu Repositories
 Run the following command to update your Ubuntu repositories:
 ```bash
+sudo add-apt-repository universe
+sudo add-apt-repository multiverse
 sudo apt update
 ```
 
