@@ -3,7 +3,7 @@
 These installation steps have been verified on **Ubuntu 22.04 LTS**.
 
 ## Step 1: Download OMNeT++
-Download the Linux version of OMNeT++ 6.0.3 from the [official website](https://omnetpp.org/download/old).
+Download the Linux version of OMNeT++ 6.0.3 from the [official website](https://omnetpp.org/download/old). Keep it in the Downloads (~/Downloads) folder.
 
 ## Step 2: Update Ubuntu Repositories
 Run the following command to update your Ubuntu repositories:
@@ -34,7 +34,7 @@ sudo apt install mpi-default-dev
 ## Step 6: Extract OMNeT++
 Extract the downloaded OMNeT++ file into a directory under your home folder:
 ```bash
-mkdir $HOME/LabSCim && tar xvfz omnetpp-6.0.3-linux-x86_64.tgz -C $HOME/LabSCim
+mkdir $HOME/LabSCim && tar xvfz ~/Downloads/omnetpp-6.0.3-linux-x86_64.tgz -C $HOME/LabSCim
 ```
 
 ## Step 7: Configure Environment Variables
