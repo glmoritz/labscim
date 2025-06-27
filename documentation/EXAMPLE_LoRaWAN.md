@@ -2,7 +2,7 @@
 
 This guide provides step-by-step instructions to configure, run, and debug a simulation example for the LoRaWAN using LabSCim simulator. If you haven't done already, please follow the [installation guide](INSTALLATION.md).
 
-In order to run the LoRaWAN, it is necessary to redirect the requests to a Network Server. The easyest to do it it through a docker container. If you have not yet installed, please install docker engine.
+In order to run the LoRaWAN, it is necessary to redirect the requests to a Network Server. The easyest to do it it through a docker container. If you have not yet installed, please install [docker engine](https://docs.docker.com/engine/install/ubuntu/).
 
 ### 1. Running LoRaWAN Locally
 
@@ -26,7 +26,7 @@ cd $HOME/LabSCim/labscim-chirpstack-docker && docker compose up -d
 In order to run the LoRaWAN simulated application using Python, some dependencies are necessary. To solve this, execute:
 
 ```
-python3 -m pip install paho-mqtt psycopg2
+python3 -m pip install paho-mqtt psycopg
 ```
 
 ### 4. Test if Chirpstack is running
