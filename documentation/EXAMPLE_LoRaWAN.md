@@ -26,7 +26,7 @@ cd $HOME/LabSCim/labscim-chirpstack-docker && docker compose up -d
 In order to run the LoRaWAN simulated application using Python, some dependencies are necessary. To solve this, execute:
 
 ```
-python3 -m pip install paho-mqtt psycopg
+python3 -m pip install paho-mqtt psycopg2-binary
 ```
 
 ### 4. Test if Chirpstack is running
