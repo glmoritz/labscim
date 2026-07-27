@@ -1,1 +1,1 @@
-../../../../../contiki-ng/arch/platform/labscim/labscim_contiking_setup.h
+../../../../contiki-ng/arch/platform/labscim/labscim_contiking_setup.h

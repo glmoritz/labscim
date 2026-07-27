@@ -1,1 +1,1 @@
-../../../../../lora_gateway/libloragw/inc/lora_gateway_setup.h
+../../../../lora_gateway/libloragw/inc/lora_gateway_setup.h

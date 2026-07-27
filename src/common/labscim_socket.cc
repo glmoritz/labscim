@@ -1,1 +1,1 @@
-../../../../../contiki-ng/arch/platform/labscim/labscim_socket.c
+../../../../contiki-ng/arch/platform/labscim/labscim_socket.c

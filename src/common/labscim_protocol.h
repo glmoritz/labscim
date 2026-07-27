@@ -1,1 +1,1 @@
-../../../../../contiki-ng/arch/platform/labscim/labscim_protocol.h
+../../../../contiki-ng/arch/platform/labscim/labscim_protocol.h
