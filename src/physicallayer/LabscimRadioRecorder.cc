@@ -14,14 +14,17 @@
 #include <iostream>
 #include <omnetpp.h>
 #include "LabscimRadioRecorder.h"
+// INET 4.7 port: FlatTransmissionBase/FlatReceptionBase and the Dimensional* Transmission/Reception
+// were removed. Transmissions/receptions are now generic (ITransmission/IReception) and expose
+// power/centerFrequency/bandwidth through a composed DimensionalSignalAnalogModel (a
+// NarrowbandSignalAnalogModel), retrieved with getAnalogModel().
 #include "inet/physicallayer/wireless/common/contract/packetlevel/IRadio.h"
-#include "inet/physicallayer/wireless/common/base/packetlevel/FlatTransmissionBase.h"
-#include "inet/physicallayer/wireless/common/base/packetlevel/FlatReceptionBase.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/ITransmission.h"
+#include "inet/physicallayer/wireless/common/contract/packetlevel/IReception.h"
 #include "inet/physicallayer/wireless/common/base/packetlevel/FlatRadioBase.h"
 #include "inet/physicallayer/wireless/common/base/packetlevel/FlatReceiverBase.h"
 
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalSignalAnalogModel.h"
 
 #include "inet/physicallayer/wireless/common/contract/packetlevel/SignalTag_m.h"
 #include "inet/linklayer/base/MacProtocolBase.h"
@@ -229,19 +232,21 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
     {
         if(signalID == receptionStartedSignal)
         {
-            const DimensionalReception* reception = dynamic_cast<const DimensionalReception *>(obj);
+            auto reception = dynamic_cast<const IReception *>(obj);
             if(reception!=nullptr)
             {
-                const auto receptionPowerFunction = reception->getPower();
+                auto analogModel = check_and_cast<const DimensionalSignalAnalogModel *>(reception->getAnalogModel());
+                const auto receptionPowerFunction = analogModel->getPower();
                 spectrumPower.addElement(receptionPowerFunction);
             }
         }
         else if(signalID == transmissionEndedSignal)
         {
-            const DimensionalTransmission* transmission = check_and_cast<const DimensionalTransmission *>(obj);
+            auto transmission = dynamic_cast<const ITransmission *>(obj);
             if(transmission!=nullptr)
             {
-                const auto transmissionPowerFunction = transmission->getPower();
+                auto analogModel = check_and_cast<const DimensionalSignalAnalogModel *>(transmission->getAnalogModel());
+                const auto transmissionPowerFunction = analogModel->getPower();
                 spectrumPower.addElement(transmissionPowerFunction);
             }
         }
@@ -251,36 +256,39 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
 
         if(signalID == transmissionEndedSignal)
         {
-            const FlatTransmissionBase* transmission = check_and_cast<const FlatTransmissionBase *>(obj);
+            auto transmission = dynamic_cast<const ITransmission *>(obj);
             if(transmission!=nullptr)
             {
+                auto am = check_and_cast<const NarrowbandSignalAnalogModel *>(transmission->getAnalogModel());
                 LogFile << signalID << " ," << simTime().dbl() <<",IRadio::transmissionEndedSignal, " << source->getFullPath().c_str();
-                LogFile << "," << transmission->getStartTime() << "," << transmission->getEndTime() << "," << transmission->getCenterFrequency().get() << "," << transmission->getBandwidth().get() << "\n";
+                LogFile << "," << transmission->getStartTime() << "," << transmission->getEndTime() << "," << am->getCenterFrequency().get() << "," << am->getBandwidth().get() << "\n";
             }
         }
         else if(signalID == receptionStartedSignal)
         {
-            const FlatReceptionBase* reception = check_and_cast<const FlatReceptionBase *>(obj);
+            auto reception = dynamic_cast<const IReception *>(obj);
             if(reception!=nullptr)
             {
-                const FlatTransmissionBase* transmission = check_and_cast<const FlatTransmissionBase *>(reception->getTransmission());
+                auto ram = check_and_cast<const NarrowbandSignalAnalogModel *>(reception->getAnalogModel());
+                const ITransmission* transmission = reception->getTransmission();
                 if(transmission!=nullptr)
                 {
                     LogFile << signalID << " ," << simTime().dbl() <<",IRadio::receptionStartedSignal, " << source->getFullPath().c_str();
-                    LogFile << "," << reception->getStartTime() << "," << reception->getCenterFrequency().get() << "," << reception->getBandwidth().get() << "\n";
+                    LogFile << "," << reception->getStartTime() << "," << ram->getCenterFrequency().get() << "," << ram->getBandwidth().get() << "\n";
                 }
             }
         }
         else if(signalID == receptionEndedSignal)
         {
-            const FlatReceptionBase* reception = check_and_cast<const FlatReceptionBase *>(obj);
+            auto reception = dynamic_cast<const IReception *>(obj);
             if(reception!=nullptr)
             {
-                const FlatTransmissionBase* transmission = check_and_cast<const FlatTransmissionBase *>(reception->getTransmission());
+                auto ram = check_and_cast<const NarrowbandSignalAnalogModel *>(reception->getAnalogModel());
+                const ITransmission* transmission = reception->getTransmission();
                 if(transmission!=nullptr)
                 {
                     LogFile << signalID << " ," << simTime().dbl() <<",IRadio::receptionEndedSignal, " << source->getFullPath().c_str();
-                    LogFile << "," << reception->getStartTime() << "," << reception->getEndTime() << "," << reception->getCenterFrequency().get() << "," << reception->getBandwidth().get() << "\n";
+                    LogFile << "," << reception->getStartTime() << "," << reception->getEndTime() << "," << ram->getCenterFrequency().get() << "," << ram->getBandwidth().get() << "\n";
                 }
             }
         }

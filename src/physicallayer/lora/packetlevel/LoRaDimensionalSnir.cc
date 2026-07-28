@@ -15,7 +15,7 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalSnir.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalSnir.h"
 #include "LoRaDimensionalSnir.h"
 #include "LoRaDimensionalReception.h"
 #include "LoRaDimensionalNoise.h"
@@ -51,7 +51,7 @@ std::ostream& LoRaDimensionalSnir::printToStream(std::ostream& stream, int level
 
 double LoRaDimensionalSnir::retMin(const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& noisepower) const
 {
-    const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+    const LoRaDimensionalReception *dimensionalReception = check_and_cast<const LoRaDimensionalReception *>(reception);
     EV_TRACE << "Reception power begin " << endl;
     EV_TRACE << *dimensionalReception->getPower() << endl;
     EV_TRACE << "Reception power end" << endl;
@@ -73,7 +73,7 @@ double LoRaDimensionalSnir::retMin(const Ptr<const IFunction<WpHz, Domain<simsec
 
 double LoRaDimensionalSnir::retMax(const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& noisepower) const
 {
-    const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+    const LoRaDimensionalReception *dimensionalReception = check_and_cast<const LoRaDimensionalReception *>(reception);
     EV_TRACE << "Reception power begin " << endl;
     EV_TRACE << *dimensionalReception->getPower() << endl;
     EV_TRACE << "Reception power end" << endl;
@@ -95,7 +95,7 @@ double LoRaDimensionalSnir::retMax(const Ptr<const IFunction<WpHz, Domain<simsec
 
 double LoRaDimensionalSnir::retMean(const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& noisepower) const
 {
-    const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+    const LoRaDimensionalReception *dimensionalReception = check_and_cast<const LoRaDimensionalReception *>(reception);
     EV_TRACE << "Reception power begin " << endl;
     EV_TRACE << *dimensionalReception->getPower() << endl;
     EV_TRACE << "Reception power end" << endl;
@@ -218,7 +218,7 @@ bool LoRaDimensionalSnir::getLoRaInterfererPresent(int LoRaSF) const
     const LoRaDimensionalNoise *dimensionalNoise = dynamic_cast<const LoRaDimensionalNoise *>(noise);
     if(dimensionalNoise->getLoRaInterfererPresent(LoRaSF))
     {
-        const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+        const LoRaDimensionalReception *dimensionalReception = check_and_cast<const LoRaDimensionalReception *>(reception);
         auto noisepower = dimensionalNoise->getLoRapower(LoRaSF);
         simsec startTime = simsec(reception->getStartTime());
         simsec endTime = simsec(reception->getEndTime());
@@ -239,7 +239,7 @@ bool LoRaDimensionalSnir::getNonLoRaInterfererPresent() const
     const LoRaDimensionalNoise *dimensionalNoise = dynamic_cast<const LoRaDimensionalNoise *>(noise);
     if(dimensionalNoise->getNonLoRaInterfererPresent())
     {
-        const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+        const LoRaDimensionalReception *dimensionalReception = check_and_cast<const LoRaDimensionalReception *>(reception);
         auto noisepower = dimensionalNoise->getNonLoRapower();
         simsec startTime = simsec(reception->getStartTime());
         simsec endTime = simsec(reception->getEndTime());

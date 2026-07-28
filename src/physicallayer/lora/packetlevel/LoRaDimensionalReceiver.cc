@@ -132,7 +132,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionPossible(const IListening *liste
     //here we can check compatibility of LoRaTx parameters (or being a gateway)
     const LoRaDimensionalTransmission *loRaTransmission = dynamic_cast<const LoRaDimensionalTransmission *>(transmission);
     const LoRaDimensionalFHSSTransmission *FHSSTransmission = dynamic_cast<const LoRaDimensionalFHSSTransmission *>(transmission);
-    const NarrowbandTransmissionBase *nbtransmission = dynamic_cast<const NarrowbandTransmissionBase *>(transmission);
+    const DimensionalSignalAnalogModel *nbtransmission = dynamic_cast<const DimensionalSignalAnalogModel *>(transmission->getAnalogModel());
 
     const LoRaBandListening* loRaListening = dynamic_cast<const LoRaBandListening *>(listening);
     bool GatewayRxPossible = false;
@@ -167,7 +167,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionPossible(const IListening *liste
     //here we can check compatibility of LoRaTx parameters (or being a gateway) and reception above sensitivity level
     const LoRaBandListening *loRaListening = check_and_cast<const LoRaBandListening *>(listening);
 
-    const NarrowbandReceptionBase *nbreception = dynamic_cast<const NarrowbandReceptionBase *>(reception);
+    const DimensionalSignalAnalogModel *nbreception = dynamic_cast<const DimensionalSignalAnalogModel *>(reception->getAnalogModel());
     const LoRaDimensionalReception *loRaReception = dynamic_cast<const LoRaDimensionalReception *>(reception);
 
 
@@ -192,7 +192,7 @@ bool LoRaDimensionalReceiver::computeIsReceptionPossible(const IListening *liste
         }
     }
 
-    const NarrowbandTransmissionBase *nbtransmission = dynamic_cast<const NarrowbandTransmissionBase *>(reception->getTransmission());
+    const DimensionalSignalAnalogModel *nbtransmission = dynamic_cast<const DimensionalSignalAnalogModel *>(reception->getTransmission()->getAnalogModel());
 
     bool TransmissionWithinBW = false;
     Hz GWminFreq = loRaListening->getCenterFrequency() - loRaListening->getBandwidth()/2;
@@ -473,7 +473,7 @@ const IReceptionResult *LoRaDimensionalReceiver::computeReceptionResult(const IL
 
     auto receptionResult = FlatReceiverBase::computeReceptionResult(listening, reception, interference, snir, decisions);
 
-    auto nbtransmission =  dynamic_cast<const NarrowbandTransmissionBase *>(reception->getTransmission());
+    auto nbtransmission =  dynamic_cast<const DimensionalSignalAnalogModel *>(reception->getTransmission()->getAnalogModel());
     auto loratransmission = dynamic_cast<const LoRaDimensionalTransmission *>(reception->getTransmission());
     auto lorafhsstransmission = dynamic_cast<const LoRaDimensionalFHSSTransmission *>(reception->getTransmission());
 
@@ -508,7 +508,7 @@ const IReceptionResult *LoRaDimensionalReceiver::computeReceptionResult(const IL
 const IReceptionDecision *LoRaDimensionalReceiver::computeReceptionDecision(const IListening *listening, const IReception *reception, IRadioSignal::SignalPart part, const IInterference *interference, const ISnir *snir) const
 {
     const BandListening *bandListening = check_and_cast<const BandListening *>(listening);
-    const NarrowbandReceptionBase *narrowbandReception = check_and_cast<const NarrowbandReceptionBase *>(reception);
+    const DimensionalSignalAnalogModel *narrowbandReception = check_and_cast<const DimensionalSignalAnalogModel *>(reception->getAnalogModel());
     bool GatewayRxPossible = false;
     if(iAmGateway)
     {

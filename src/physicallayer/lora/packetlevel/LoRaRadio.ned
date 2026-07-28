@@ -39,7 +39,9 @@ module LoRaRadio extends FlatRadioBase
         @statistic[txDR](title="LoRa AU915 Datarate from transmitted packets"; source=LoRaDRAU915FromTransmission(transmissionEnded); record=histogram,vector?);        
 
         
-        string signalAnalogRepresentation @enum("scalar", "dimensional") = default("dimensional");
+        // INET 4.7 port: signalAnalogRepresentation is now DECLARED in Radio.ned (base), so we
+        // only override its default here instead of re-declaring it (which collides).
+        signalAnalogRepresentation = default("dimensional");
         transmitter.typename = default(signalAnalogRepresentation == "scalar" ? "Ieee802154ScalarTransmitter" : signalAnalogRepresentation == "dimensional" ? "LoRaDimensionalTransmitter" : "");
         receiver.typename = default(signalAnalogRepresentation == "scalar" ? "Ieee802154ScalarReceiver" : signalAnalogRepresentation == "dimensional" ? "LoRaDimensionalReceiver" : "");
 

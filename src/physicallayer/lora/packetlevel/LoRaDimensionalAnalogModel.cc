@@ -15,11 +15,14 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalAnalogModel.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalNoise.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalSnir.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
+// INET 4.7 port: medium analog model renamed; reception/transmission now expose power/frequency
+// via a composed DimensionalSignalAnalogModel (retrieved with getAnalogModel()).
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalMediumAnalogModel.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalNoise.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalReceptionAnalogModel.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalSignalAnalogModel.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalSnir.h"
+#include "inet/physicallayer/wireless/common/radio/packetlevel/Reception.h"
 #include "inet/physicallayer/wireless/common/radio/packetlevel/BandListening.h"
 #include "inet/physicallayer/wireless/common/contract/packetlevel/IRadioMedium.h"
 #include "inet/common/Units.h"
@@ -44,7 +47,7 @@ Define_Module(LoRaDimensionalAnalogModel);
 std::ostream& LoRaDimensionalAnalogModel::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     stream << "LoRaDimensionalAnalogModel";
-    return DimensionalAnalogModel::printToStream(stream, level);
+    return DimensionalMediumAnalogModel::printToStream(stream, level);
 }
 
 const IReception *LoRaDimensionalAnalogModel::computeReception(const IRadio *receiverRadio, const ITransmission *transmission, const IArrival *arrival) const
@@ -61,11 +64,15 @@ const IReception *LoRaDimensionalAnalogModel::computeReception(const IRadio *rec
         const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& receptionPower = computeReceptionPower(receiverRadio, transmission, arrival);
         int LoRaSF = loRaTransmission->getLoRaSF();
         int LoRaCR = loRaTransmission->getLoRaCR();
-        return new LoRaDimensionalReception(receiverRadio, transmission, receptionStartTime, receptionEndTime, receptionStartPosition, receptionEndPosition, receptionStartOrientation, receptionEndOrientation, loRaTransmission->getCenterFrequency(), loRaTransmission->getBandwidth(), receptionPower,LoRaSF,LoRaCR);
+        // INET 4.7: the reception composes a DimensionalReceptionAnalogModel carrying the
+        // power/centerFrequency/bandwidth; durations come from the transmission's analog model.
+        auto transmissionAnalogModel = check_and_cast<const DimensionalSignalAnalogModel *>(transmission->getAnalogModel());
+        auto receptionAnalogModel = new DimensionalReceptionAnalogModel(transmissionAnalogModel->getPreambleDuration(), transmissionAnalogModel->getHeaderDuration(), transmissionAnalogModel->getDataDuration(), loRaTransmission->getCenterFrequency(), loRaTransmission->getBandwidth(), receptionPower);
+        return new LoRaDimensionalReception(receiverRadio, transmission, receptionStartTime, receptionEndTime, receptionStartPosition, receptionEndPosition, receptionStartOrientation, receptionEndOrientation, receptionAnalogModel, LoRaSF, LoRaCR);
     }
     else
     {
-        return DimensionalAnalogModel::computeReception(receiverRadio, transmission, arrival);
+        return DimensionalMediumAnalogModel::computeReception(receiverRadio, transmission, arrival);
     }
 }
 
@@ -126,7 +133,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IListening *listeni
             }
             else
             {
-                const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(interferingReception);
+                const DimensionalSignalAnalogModel *dimensionalReception = check_and_cast<const DimensionalSignalAnalogModel *>(interferingReception->getAnalogModel());
                 auto receptionPower = dimensionalReception->getPower();
                 OtherReceptionPowers.push_back(receptionPower);
                 Hz InterferecenceBandStart = dimensionalReception->getCenterFrequency() - dimensionalReception->getBandwidth()/2;
@@ -171,7 +178,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IListening *listeni
     }
     else
     {
-        return DimensionalAnalogModel::computeNoise(listening, interference);
+        return DimensionalMediumAnalogModel::computeNoise(listening, interference);
     }
 }
 
@@ -179,7 +186,7 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
 {
     auto loradimensionalReception = dynamic_cast<const LoRaDimensionalReception *>(reception);
     auto loradimensionalNoise = dynamic_cast<const LoRaDimensionalNoise *>(noise);
-    auto dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+    auto dimensionalReception = check_and_cast<const DimensionalSignalAnalogModel *>(reception->getAnalogModel());
     auto dimensionalNoise = check_and_cast<const DimensionalNoise *>(noise);
     //const auto& bandpassFilter = makeShared<Boxcar2DFunction<double, simsec, Hz>>(simsec(dimensionalReception->getStartTime()), simsec(dimensionalReception->getEndTime()),  dimensionalNoise->getCenterFrequency() - dimensionalNoise->getBandwidth()/2, dimensionalNoise->getCenterFrequency() + dimensionalNoise->getBandwidth()/2, 1);
 
@@ -301,14 +308,14 @@ const INoise *LoRaDimensionalAnalogModel::computeNoise(const IReception *recepti
         {
             //non-lora interference on lora noise
             const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& NonLoRaPower = makeShared<AddedFunction<WpHz, Domain<simsec, Hz>>>(dimensionalReception->getPower(), loradimensionalNoise->getNonLoRapower());
-            auto dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+            auto dimensionalReception = check_and_cast<const DimensionalSignalAnalogModel *>(reception->getAnalogModel());
             return new LoRaDimensionalNoise(reception->getStartTime(), reception->getEndTime(), dimensionalReception->getCenterFrequency(), dimensionalReception->getBandwidth(), loradimensionalNoise->getLoRapower(),NonLoRaPower,loradimensionalNoise->getBackgroundpower(),ConstLoRaInterfererPresent, true);
         }
     }
     else
     {
         //common dimensional noise
-        return DimensionalAnalogModel::computeNoise(reception, noise);
+        return DimensionalMediumAnalogModel::computeNoise(reception, noise);
     }
 }
 
@@ -328,12 +335,12 @@ const ISnir *LoRaDimensionalAnalogModel::computeSNIR(const IReception *reception
         const auto loraFHSStransmission = dynamic_cast<const LoRaDimensionalFHSSTransmission *>(reception->getTransmission());
         if(loraFHSStransmission)
         {
-            auto dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
-            auto dimensionalNoise = check_and_cast<const DimensionalNoise *>(noise);
-            return new LoRaDimensionalFHSSSnir(dimensionalReception, dimensionalNoise);
+            // INET 4.7: LoRaDimensionalFHSSSnir now takes generic IReception/INoise and reads
+            // power via the composed analog model, so pass the reception/noise straight through.
+            return new LoRaDimensionalFHSSSnir(reception, noise);
         }
     }
-    return DimensionalAnalogModel::computeSNIR(reception, noise);
+    return DimensionalMediumAnalogModel::computeSNIR(reception, noise);
 }
 
 

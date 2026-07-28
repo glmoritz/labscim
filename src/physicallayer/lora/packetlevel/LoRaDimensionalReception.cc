@@ -16,14 +16,13 @@
 //
 
 #include "LoRaDimensionalReception.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
 
 namespace labscim {
 
 namespace physicallayer {
 
-LoRaDimensionalReception::LoRaDimensionalReception(const IRadio *radio, const ITransmission *transmission, const simtime_t startTime, const simtime_t endTime, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, Hz centerFrequency, Hz bandwidth, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& power, int LoRaSF, int LoRaCR):
-        DimensionalReception(radio, transmission, startTime, endTime, startPosition, endPosition, startOrientation, endOrientation, centerFrequency, bandwidth, power),
+LoRaDimensionalReception::LoRaDimensionalReception(const IRadio *radio, const ITransmission *transmission, const simtime_t startTime, const simtime_t endTime, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, const IReceptionAnalogModel *analogModel, int LoRaSF, int LoRaCR):
+        Reception(radio, transmission, startTime, endTime, startPosition, endPosition, startOrientation, endOrientation, analogModel),
         LoRaSF(LoRaSF),
         LoRaCR(LoRaCR)
 {
@@ -32,4 +31,3 @@ LoRaDimensionalReception::LoRaDimensionalReception(const IRadio *radio, const IT
 } // namespace physicallayer
 
 } // namespace labscim
-

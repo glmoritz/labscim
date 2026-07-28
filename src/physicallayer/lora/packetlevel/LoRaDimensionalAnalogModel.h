@@ -18,7 +18,10 @@
 #ifndef __LABSCIM_LORADIMENSIONALANALOGMODEL_H
 #define __LABSCIM_LORADIMENSIONALANALOGMODEL_H
 
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalAnalogModel.h"
+// INET 4.7 port: the medium's DimensionalAnalogModel was renamed DimensionalMediumAnalogModel
+// (analog-model separation refactor). Its computeReception/computeNoise/computeSNIR/
+// computeReceptionPower interface is unchanged, so this subclass keeps the same overrides.
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalMediumAnalogModel.h"
 
 using namespace inet::physicallayer;
 
@@ -26,7 +29,7 @@ namespace labscim {
 
 namespace physicallayer {
 
-class INET_API LoRaDimensionalAnalogModel : public DimensionalAnalogModel
+class INET_API LoRaDimensionalAnalogModel : public DimensionalMediumAnalogModel
 {
   public:
     virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;

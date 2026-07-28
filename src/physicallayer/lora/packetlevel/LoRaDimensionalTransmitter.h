@@ -19,7 +19,9 @@
 #ifndef __LABSCIM_LORADIMENSIONALTRANSMITTER_H
 #define __LABSCIM_LORADIMENSIONALTRANSMITTER_H
 
-#include "inet/physicallayer/wireless/common/base/packetlevel/DimensionalTransmitterBase.h"
+// INET 4.7 port: DimensionalTransmitterBase was removed by the analog-model separation refactor.
+// The power-function creation moved into the DimensionalTransmitterAnalogModel submodule, reached
+// via TransmitterBase::getAnalogModel(). This transmitter now derives only from FlatTransmitterBase.
 #include "inet/physicallayer/wireless/common/base/packetlevel/FlatTransmitterBase.h"
 
 #include "../../../common/labscim_sx126x.h"
@@ -39,7 +41,7 @@ typedef enum
     MODEM_LORA,
 }RadioModems_t;
 
-class INET_API LoRaDimensionalTransmitter : public FlatTransmitterBase, public DimensionalTransmitterBase
+class INET_API LoRaDimensionalTransmitter : public FlatTransmitterBase
 {
   public:
     LoRaDimensionalTransmitter();

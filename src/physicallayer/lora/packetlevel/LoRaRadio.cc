@@ -25,6 +25,7 @@
 #include "inet/physicallayer/wireless/common/base/packetlevel/FlatTransmitterBase.h"
 #include "inet/physicallayer/wireless/common/medium/RadioMedium.h"
 #include "inet/common/lifecycle/ModuleOperations.h"
+#include "inet/common/stlutils.h" // INET 4.7 port: inet::remove() for allReceptionTimers sync
 #include "inet/common/ModuleAccess.h"
 #include "inet/common/Simsignals.h"
 #include "LoRaRadio.h"
@@ -313,6 +314,11 @@ void LoRaRadio::endReception(cMessage *timer)
             EV_INFO << "Reception ended: \x1b[1mignoring\x1b[0m " << (IWirelessSignal *)signal << " " << IRadioSignal::getSignalPartName(part) << " as " << reception << endl;
 
         concurrentReceptions.remove(timer);
+        // INET 4.7 port: Radio::handleSignal() now registers every reception timer in the base's
+        // allReceptionTimers vector, and Radio::~Radio() cancelAndDeletes whatever is left there.
+        // This gateway path deletes the timer itself, so it must also unregister it from the base
+        // list -- otherwise a dangling pointer remains and teardown double-frees it (SIGSEGV).
+        remove(allReceptionTimers, timer);
         updateReceptionTimer();
         updateTransceiverState();
         updateTransceiverPart();

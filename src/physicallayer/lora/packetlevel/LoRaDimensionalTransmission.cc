@@ -15,7 +15,6 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
 #include "inet/common/Units.h"
 #include "LoRaDimensionalTransmission.h"
 
@@ -27,8 +26,8 @@ namespace labscim {
 
 namespace physicallayer {
 
-LoRaDimensionalTransmission::LoRaDimensionalTransmission(const IRadio *transmitter, const Packet *packet, const simtime_t startTime, const simtime_t endTime, const simtime_t preambleDuration, const simtime_t headerDuration, const simtime_t dataDuration, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, const IModulation *modulation, b headerLength, b dataLength, Hz centerFrequency, Hz bandwidth, bps bitrate, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& power, int LoRaSF, int LoRaCR, W LoRaTransmissionPower, bool IsUplink) :
-    DimensionalTransmission(transmitter, packet, startTime, endTime, preambleDuration, headerDuration, dataDuration, startPosition, endPosition, startOrientation, endOrientation, modulation, headerLength, dataLength, centerFrequency, bandwidth, bitrate, power),
+LoRaDimensionalTransmission::LoRaDimensionalTransmission(const IRadio *transmitter, const Packet *packet, const simtime_t startTime, const simtime_t endTime, const simtime_t preambleDuration, const simtime_t headerDuration, const simtime_t dataDuration, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, const ITransmissionAnalogModel *analogModel, b headerLength, b dataLength, const IModulation *modulation, Hz bandwidth, bps bitrate, int LoRaSF, int LoRaCR, W LoRaTransmissionPower, bool IsUplink) :
+    ApskTransmission(transmitter, packet, startTime, endTime, preambleDuration, headerDuration, dataDuration, startPosition, endPosition, startOrientation, endOrientation, nullptr, nullptr, nullptr, nullptr, analogModel, headerLength, dataLength, modulation, bandwidth, -1, bitrate, NAN),
     LoRaSF(LoRaSF),
     LoRaCR(LoRaCR),
     TransmissionPower(LoRaTransmissionPower),
@@ -41,10 +40,9 @@ std::ostream& LoRaDimensionalTransmission::printToStream(std::ostream& stream, i
     stream << "LoRaDimensionalTransmission";
     if (level <= PRINT_LEVEL_DEBUG)
         stream << ", LoRaSF = " << LoRaSF << ", LoRaCR = 4/" << LoRaCR+4 << ", ";
-    return DimensionalTransmission::printToStream(stream, level);
+    return ApskTransmission::printToStream(stream, level);
 }
 
 } // namespace physicallayer
 
 } // namespace labscim
-

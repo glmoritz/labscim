@@ -15,7 +15,7 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalSnir.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalSnir.h"
 #include "LoRaDimensionalSnir.h"
 #include "LoRaDimensionalReception.h"
 #include "LoRaDimensionalNoise.h"
@@ -30,7 +30,7 @@ namespace labscim {
 namespace physicallayer {
 
 
-LoRaDimensionalFHSSSnir::LoRaDimensionalFHSSSnir(const DimensionalReception *reception, const DimensionalNoise *noise) :
+LoRaDimensionalFHSSSnir::LoRaDimensionalFHSSSnir(const IReception *reception, const INoise *noise) :
     DimensionalSnir(reception, noise)
 {
     const std::vector<labscim::physicallayer::LoRaFHSSHopEntry>& hopTable = check_and_cast<const LoRaDimensionalFHSSTransmission*>(reception->getTransmission())->getHopTable();
@@ -62,7 +62,7 @@ void LoRaDimensionalFHSSSnir::computeHopMin(uint32_t numhops) const
 {
     // TODO: factor out common part
     const DimensionalNoise *dimensionalNoise = check_and_cast<const DimensionalNoise *>(noise);
-    const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+    const DimensionalSignalAnalogModel *dimensionalReception = check_and_cast<const DimensionalSignalAnalogModel *>(reception->getAnalogModel());
     EV_TRACE << "Reception power begin " << endl;
     EV_TRACE << *dimensionalReception->getPower() << endl;
     EV_TRACE << "Reception power end" << endl;
@@ -106,7 +106,7 @@ void LoRaDimensionalFHSSSnir::computeHopMean(uint32_t numhops) const
 {
     // TODO: factor out common part
     const DimensionalNoise *dimensionalNoise = check_and_cast<const DimensionalNoise *>(noise);
-    const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+    const DimensionalSignalAnalogModel *dimensionalReception = check_and_cast<const DimensionalSignalAnalogModel *>(reception->getAnalogModel());
     EV_TRACE << "Reception power begin " << endl;
     EV_TRACE << *dimensionalReception->getPower() << endl;
     EV_TRACE << "Reception power end" << endl;
@@ -150,7 +150,7 @@ void LoRaDimensionalFHSSSnir::computeHopMax(uint32_t numhops) const
 {
     // TODO: factor out common part
     const DimensionalNoise *dimensionalNoise = check_and_cast<const DimensionalNoise *>(noise);
-    const DimensionalReception *dimensionalReception = check_and_cast<const DimensionalReception *>(reception);
+    const DimensionalSignalAnalogModel *dimensionalReception = check_and_cast<const DimensionalSignalAnalogModel *>(reception->getAnalogModel());
     EV_TRACE << "Reception power begin " << endl;
     EV_TRACE << *dimensionalReception->getPower() << endl;
     EV_TRACE << "Reception power end" << endl;

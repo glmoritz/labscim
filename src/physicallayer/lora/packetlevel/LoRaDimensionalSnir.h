@@ -18,9 +18,11 @@
 #ifndef __LABSCIM_LORADIMENSIONALSNIR_H
 #define __LABSCIM_LORADIMENSIONALSNIR_H
 
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalNoise.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalSnir.h"
+// INET 4.7 port: DimensionalReception was removed; LoRaDimensionalReception now derives from the
+// generic Reception and exposes getPower()/getCenterFrequency()/getBandwidth() convenience
+// accessors, so this Snir casts the reception to LoRaDimensionalReception directly.
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalNoise.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalSnir.h"
 #include "LoRaDimensionalReception.h"
 #include "LoRaDimensionalNoise.h"
 
