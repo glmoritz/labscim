@@ -18,9 +18,12 @@
 #ifndef __LABSCIM_LORADIMENSIONALFHSSSNIR_H
 #define __LABSCIM_LORADIMENSIONALFHSSSNIR_H
 
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalNoise.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalReception.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalSnir.h"
+// INET 4.7 port: DimensionalReception removed; reception power is read from the composed
+// DimensionalSignalAnalogModel. The FHSS reception is a generic Reception, so the ctor takes
+// generic IReception/INoise.
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalNoise.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalSignalAnalogModel.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalSnir.h"
 #include "LoRaDimensionalReception.h"
 #include "LoRaDimensionalNoise.h"
 
@@ -46,7 +49,7 @@ class INET_API LoRaDimensionalFHSSSnir : public DimensionalSnir
     virtual void computeHopMean(uint32_t numhops) const;
 
   public:
-    LoRaDimensionalFHSSSnir(const DimensionalReception *reception, const DimensionalNoise *noise);
+    LoRaDimensionalFHSSSnir(const IReception *reception, const INoise *noise);
 
     virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;
 

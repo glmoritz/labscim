@@ -17,7 +17,8 @@
 //
 
 #include "inet/mobility/contract/IMobility.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
+#include "inet/common/math/Functions.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalTransmissionAnalogModel.h"
 #include "inet/physicallayer/wireless/common/contract/packetlevel/RadioControlInfo_m.h"
 #include "LoRaDimensionalTransmitter.h"
 #include "LoRaDimensionalTransmission.h"
@@ -36,8 +37,7 @@ namespace physicallayer {
 Define_Module(LoRaDimensionalTransmitter);
 
 LoRaDimensionalTransmitter::LoRaDimensionalTransmitter() :
-            FlatTransmitterBase(),
-            DimensionalTransmitterBase()
+            FlatTransmitterBase()
 {
     CRC_enabled = true;
     Header_enabled = true;
@@ -54,14 +54,12 @@ void LoRaDimensionalTransmitter::initialize(int stage)
         LoRaCR = par("LoRaCR");
     }
     FlatTransmitterBase::initialize(stage);
-    DimensionalTransmitterBase::initialize(stage);
 }
 
 std::ostream& LoRaDimensionalTransmitter::printToStream(std::ostream& stream, int level, int evFlags) const
 {
     stream << "LoRaDimensionalTransmitter";
-    DimensionalTransmitterBase::printToStream(stream, level);
-    return DimensionalTransmitterBase::printToStream(stream, level);
+    return FlatTransmitterBase::printToStream(stream, level);
 }
 
 const ITransmission *LoRaDimensionalTransmitter::createTransmission(const IRadio *transmitter, const Packet *packet, const simtime_t startTime) const
@@ -92,10 +90,12 @@ const ITransmission *LoRaDimensionalTransmitter::createTransmission(const IRadio
         simtime_t Tpayload = payloadSymbNb * Tsym;
         simtime_t Tpacket = Tpayload + Tpreamble;
         const simtime_t endTime = startTime + Tpacket;
-        const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& powerFunction = createPowerFunction(startTime, endTime, centerFrequency, bandWidth, transmissionPower);
+        // INET 4.7: the transmitter's analogModel submodule (DimensionalTransmitterAnalogModel)
+        // builds the power function; the transmission composes the returned analog model.
+        auto analogModel = getAnalogModel()->createAnalogModel(Tpreamble, simtime_t::ZERO, Tpayload, centerFrequency, bandWidth, transmissionPower);
 
         EV_DEBUG << "Start LoRa TX " << centerFrequency << ", BW" << bandWidth << ", SF " << RequestedLoraSF << ", CR 4/" << (RequestedLoraCR+4) << ", Power: " << math::mW2dBmW(transmissionPower.get()*1000) << " dBm" << endl;
-        return new LoRaDimensionalTransmission(transmitter, packet, startTime, endTime, Tpreamble, simtime_t::ZERO, Tpayload, startPosition, endPosition, startOrientation, endOrientation, modulation, b(0), packet->getTotalLength(), centerFrequency, bandWidth, transmissionBitrate, powerFunction,RequestedLoraSF,RequestedLoraCR, transmissionPower,!iAmGateway);
+        return new LoRaDimensionalTransmission(transmitter, packet, startTime, endTime, Tpreamble, simtime_t::ZERO, Tpayload, startPosition, endPosition, startOrientation, endOrientation, analogModel, b(0), packet->getTotalLength(), modulation, bandWidth, transmissionBitrate, RequestedLoraSF, RequestedLoraCR, transmissionPower, !iAmGateway);
     }
     case SX126X_PKT_TYPE_LR_FHSS:
     {
@@ -108,15 +108,19 @@ const ITransmission *LoRaDimensionalTransmitter::createTransmission(const IRadio
 
 
         //create LR-FHSS spectrum
+        // INET 4.7: build each hop's boxcar power directly (the flat, no-gain case of the old
+        // DimensionalTransmitterBase::createPowerFunction), sum them, and wrap the summed power in a
+        // DimensionalTransmissionAnalogModel composed into the transmission.
         for(const auto& hop : mHopTable)
         {
             hopend =  hopstart + hop.getDuration();
-            const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& powerFunction = createPowerFunction(hopstart, hopend, hop.getCenterFrequency(), hop.getBandwidth(), transmissionPower);
+            const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& powerFunction = makeShared<Boxcar2DFunction<WpHz, simsec, Hz>>(simsec(hopstart), simsec(hopend), hop.getCenterFrequency() - hop.getBandwidth() / 2, hop.getCenterFrequency() + hop.getBandwidth() / 2, transmissionPower / hop.getBandwidth());
             FHSSBands.push_back(powerFunction);
             hopstart = hopend;
         }
         const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& FHSSSpectrum = makeShared<SummedFunction<WpHz, Domain<simsec, Hz>>>(FHSSBands);
-        return new LoRaDimensionalFHSSTransmission(transmitter, packet, startTime, hopend, simtime_t::ZERO, simtime_t::ZERO, hopend-startTime, startPosition, endPosition, startOrientation, endOrientation, modulation, b(0), packet->getTotalLength(), centerFrequency, bandWidth, transmissionBitrate, FHSSSpectrum, mHopTable, BW, FHSSGrid, FHSSCR );
+        auto analogModel = new DimensionalTransmissionAnalogModel(simtime_t::ZERO, simtime_t::ZERO, hopend - startTime, centerFrequency, bandWidth, FHSSSpectrum);
+        return new LoRaDimensionalFHSSTransmission(transmitter, packet, startTime, hopend, simtime_t::ZERO, simtime_t::ZERO, hopend-startTime, startPosition, endPosition, startOrientation, endOrientation, analogModel, b(0), packet->getTotalLength(), modulation, bandWidth, transmissionBitrate, mHopTable, BW, FHSSGrid, FHSSCR );
     }
     case SX126X_PKT_TYPE_GFSK:
     default:

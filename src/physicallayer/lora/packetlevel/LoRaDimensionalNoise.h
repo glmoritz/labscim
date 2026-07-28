@@ -20,7 +20,7 @@
 
 #include "inet/common/math/Functions.h"
 #include "inet/physicallayer/wireless/common/base/packetlevel/NarrowbandNoiseBase.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalNoise.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalNoise.h"
 
 using namespace inet;
 using namespace inet::physicallayer;

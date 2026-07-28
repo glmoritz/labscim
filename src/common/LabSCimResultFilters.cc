@@ -22,7 +22,8 @@
 #include "inet/common/ResultFilters.h"
 #include "inet/common/ResultRecorders.h"
 
-#include "inet/physicallayer/wireless/common/base/packetlevel/FlatReceptionBase.h"
+// INET 4.7 port: FlatReceptionBase.h was removed and is unused here (the filters work on
+// IReception/ITransmission and LoRaDimensionalTransmission's own getters).
 #include "inet/physicallayer/wireless/common/contract/packetlevel/SignalTag_m.h"
 #include "LabSCimResultFilters.h"
 #include "../physicallayer/lora/packetlevel/LoRaDimensionalTransmission.h"

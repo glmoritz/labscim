@@ -18,8 +18,15 @@
 #ifndef __LABSCIM_LORADIMENSIONALTRANSMISSION_H
 #define __LABSCIM_LORADIMENSIONALTRANSMISSION_H
 
+// INET 4.7 port: the old DimensionalTransmission (a Transmission that carried the power
+// function) was removed by INET's analog-model separation refactor. We now derive from the
+// narrowband/flat ApskTransmission and compose a DimensionalTransmissionAnalogModel (built by
+// the transmitter and passed in) that holds the power function / centerFrequency / bandwidth.
+// getBandwidth()/getBitrate()/getModulation() come from ApskTransmission; getCenterFrequency()
+// is delegated to the composed analog model.
 #include "inet/common/math/Functions.h"
-#include "inet/physicallayer/wireless/ieee80211/packetlevel/Ieee80211DimensionalTransmission.h"
+#include "inet/physicallayer/wireless/apsk/packetlevel/ApskTransmission.h"
+#include "inet/physicallayer/wireless/common/analogmodel/dimensional/DimensionalSignalAnalogModel.h"
 
 using namespace inet;
 using namespace inet::physicallayer;
@@ -31,7 +38,7 @@ namespace physicallayer {
 
 
 
-class INET_API LoRaDimensionalTransmission : public DimensionalTransmission
+class INET_API LoRaDimensionalTransmission : public ApskTransmission
 {
   protected:
     const int LoRaSF;
@@ -41,7 +48,7 @@ class INET_API LoRaDimensionalTransmission : public DimensionalTransmission
 
 
   public:
-    LoRaDimensionalTransmission(const IRadio *transmitter, const Packet *packet, const simtime_t startTime, const simtime_t endTime, const simtime_t preambleDuration, const simtime_t headerDuration, const simtime_t dataDuration, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, const IModulation *modulation, b headerLength, b dataLength, Hz centerFrequency, Hz bandwidth, bps bitrate, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& power, int LoRaSF, int LoRaCR, W LoRaTransmissionPower, bool IsUplink);
+    LoRaDimensionalTransmission(const IRadio *transmitter, const Packet *packet, const simtime_t startTime, const simtime_t endTime, const simtime_t preambleDuration, const simtime_t headerDuration, const simtime_t dataDuration, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, const ITransmissionAnalogModel *analogModel, b headerLength, b dataLength, const IModulation *modulation, Hz bandwidth, bps bitrate, int LoRaSF, int LoRaCR, W LoRaTransmissionPower, bool IsUplink);
 
     virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;
 
@@ -49,6 +56,9 @@ class INET_API LoRaDimensionalTransmission : public DimensionalTransmission
     virtual int getLoRaCR() const { return LoRaCR; }
     virtual W getLoRaTransmissionPower() const { return TransmissionPower; }
     virtual bool getLoRaIamUplink() const { return Uplink; }
+
+    // centerFrequency now lives in the composed analog model (INET 4.7)
+    Hz getCenterFrequency() const { return check_and_cast<const DimensionalSignalAnalogModel *>(getAnalogModel())->getCenterFrequency(); }
 };
 
 } // namespace physicallayer
@@ -56,4 +66,3 @@ class INET_API LoRaDimensionalTransmission : public DimensionalTransmission
 } // namespace labscim
 
 #endif // ifndef __LABSCIM_LORADIMENSIONALTRANSMISSION_H
-

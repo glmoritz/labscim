@@ -18,8 +18,10 @@
 #ifndef __LABSCIM_LORADIMENSIONALFHSSTRANSMISSION_H
 #define __LABSCIM_LORADIMENSIONALFHSSTRANSMISSION_H
 
+// INET 4.7 port: derive from ApskTransmission + composed analog model (see
+// LoRaDimensionalTransmission.h for the rationale behind the analog-model refactor).
 #include "inet/common/math/Functions.h"
-#include "inet/physicallayer/wireless/common/analogmodel/packetlevel/DimensionalTransmission.h"
+#include "inet/physicallayer/wireless/apsk/packetlevel/ApskTransmission.h"
 #include "LoRaFHSSHopEntry.h"
 #include "../../../common/lr_fhss_v1_base_types.h"
 
@@ -33,7 +35,7 @@ namespace physicallayer {
 
 
 
-class INET_API LoRaDimensionalFHSSTransmission : public DimensionalTransmission
+class INET_API LoRaDimensionalFHSSTransmission : public ApskTransmission
 {
   protected:
     const W TransmissionPower;
@@ -44,7 +46,7 @@ class INET_API LoRaDimensionalFHSSTransmission : public DimensionalTransmission
 
 
   public:
-    LoRaDimensionalFHSSTransmission(const IRadio *transmitter, const Packet *packet, const simtime_t startTime, const simtime_t endTime, const simtime_t preambleDuration, const simtime_t headerDuration, const simtime_t dataDuration, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, const IModulation *modulation, b headerLength, b dataLength, Hz centerFrequency, Hz bandwidth, bps bitrate, const Ptr<const IFunction<WpHz, Domain<simsec, Hz>>>& power, const std::vector<labscim::physicallayer::LoRaFHSSHopEntry>& HopSequence, lr_fhss_v1_bw_t BWIndex, lr_fhss_v1_grid_t Grid, lr_fhss_v1_cr_t CR );
+    LoRaDimensionalFHSSTransmission(const IRadio *transmitter, const Packet *packet, const simtime_t startTime, const simtime_t endTime, const simtime_t preambleDuration, const simtime_t headerDuration, const simtime_t dataDuration, const Coord startPosition, const Coord endPosition, const Quaternion startOrientation, const Quaternion endOrientation, const ITransmissionAnalogModel *analogModel, b headerLength, b dataLength, const IModulation *modulation, Hz bandwidth, bps bitrate, const std::vector<labscim::physicallayer::LoRaFHSSHopEntry>& HopSequence, lr_fhss_v1_bw_t BWIndex, lr_fhss_v1_grid_t Grid, lr_fhss_v1_cr_t CR );
 
     virtual std::ostream& printToStream(std::ostream& stream, int level, int evFlags = 0) const override;
 
