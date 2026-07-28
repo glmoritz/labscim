@@ -1,1 +1,1 @@
-../../../../../contiki-ng/arch/platform/labscim/labscim-contiki-radio-protocol.h
+../../../../contiki-ng/arch/platform/labscim/labscim-contiki-radio-protocol.h

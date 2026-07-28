@@ -1,1 +1,1 @@
-../../../../../contiki-ng/arch/platform/labscim/shared_mutex.c
+../../../../contiki-ng/arch/platform/labscim/shared_mutex.c
