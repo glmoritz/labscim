@@ -14,7 +14,12 @@ MQTT_PASSWORD = ''
 UPLINK_TOPIC = "application/+/device/+/event/up"
 DOWNLINK_TOPIC_TEMPLATE = "application/{app_id}/device/{dev_eui}/command/down"
 
-SEND_LORA_DOWNSTREAM_REPLY = True
+# False reproduces the reference setup, which had no application downlink at all
+# (LoRaDownstreamPacketGenerated is 0 in every module of every archived .sca). Echoing every
+# uplink makes the gateway transmit ~1 downlink per uplink; with radioModeFilter=true a
+# transmitting gateway cannot receive, so the echoes cost uplink PDR, and they also trip
+# CheckRetransUnconfirmedUplink and cancel the NbTrans repetitions.
+SEND_LORA_DOWNSTREAM_REPLY = False
 
 
 def execute(sql):

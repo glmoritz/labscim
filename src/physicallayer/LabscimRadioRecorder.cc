@@ -318,7 +318,9 @@ void LabscimRadioRecorder::receiveSignal(cComponent *source, simsignal_t signalI
                     if (packet->findTag<SnirInd>() != nullptr)
                     {
                         auto snir = packet->getTag<SnirInd>();
-                        double snr = math::fraction2dB(snir->getAverageSnir());
+                        // No 'double' here: declaring one shadowed the snr written below, so
+                        // the SNR column of every packetSentToUpper line was a constant 0.
+                        snr = math::fraction2dB(snir->getAverageSnir());
                     }
                     LogFile << signalID << " ," << simTime().dbl() <<",packetSentToUpperSignal, " << source->getFullPath().c_str();
                     LogFile << "," << packet->getArrivalTime().dbl() << "," << frequency << "," << bandwidth << "," << power << "," << snr << "\n";
