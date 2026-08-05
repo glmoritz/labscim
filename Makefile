@@ -32,7 +32,7 @@ makefiles:
 	cd src && opp_makemake -f --deep \
 	    -KINET_PROJ=$(INET_PROJ) -DINET_IMPORT \
 	    -I$(INET_PROJ)/src -L$(INET_PROJ)/src \
-	    -lboost_system -lcryptopp -lpthread -lrt -lINET
+	    -lcryptopp -lpthread -lrt -lINET
 
 checkmakefiles:
 	@if [ ! -f src/Makefile ]; then \
